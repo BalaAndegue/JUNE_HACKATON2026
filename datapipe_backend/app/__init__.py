@@ -16,11 +16,14 @@ def create_app(testing=False):
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
         app.config['JWT_SECRET_KEY'] = 'test-secret'
         app.config['WTF_CSRF_ENABLED'] = False
-        # Never hit external LLM APIs during tests — force the heuristic path.
+        # Never hit external APIs / enforce secrets during tests.
         app.config['ANTHROPIC_API_KEY'] = ''
         app.config['OPENAI_API_KEY'] = ''
         app.config['GEMINI_API_KEY'] = ''
         app.config['GROQ_API_KEY'] = ''
+        app.config['TELEGRAM_BOT_TOKEN'] = ''
+        app.config['TELEGRAM_WEBHOOK_SECRET'] = ''
+        app.config['PUBLIC_URL'] = ''
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
