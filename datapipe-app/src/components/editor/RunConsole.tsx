@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { ChevronDown, Terminal, Table2, Box, X } from 'lucide-react'
+import { Terminal, Table2, Box, X, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { useEditorStore } from '@/store/editor.store'
-import { cn, formatDuration, formatNumber } from '@/lib/utils'
+import { runService } from '@/services/run.service'
+import { toast } from 'sonner'
+import { cn, formatNumber } from '@/lib/utils'
 
 interface RunConsoleProps {
   height: number
@@ -29,6 +31,23 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
+
+  const downloadAuditReport = async () => {
+    if (!activeRunId) return
+    try {
+      const report = await runService.getAuditReport(activeRunId)
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `rapport_audit_${activeRunId.slice(-6)}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success("Rapport d'audit exporté")
+    } catch {
+      toast.error("Impossible de générer le rapport d'audit")
+    }
+  }
 
   return (
     <div
@@ -74,9 +93,18 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
           )}
         </div>
 
-        <Button variant="ghost" size="icon-sm" onClick={onClose}>
-          <X className="h-3.5 w-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {activeRunId && (
+            <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs"
+                    onClick={downloadAuditReport}>
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+              Rapport d&apos;audit
+            </Button>
+          )}
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Content */}

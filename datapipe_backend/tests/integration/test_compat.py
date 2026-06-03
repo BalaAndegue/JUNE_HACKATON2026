@@ -36,6 +36,15 @@ class TestRunAliases:
         assert resp.status_code == 200
         assert 'valid' in resp.get_json()
 
+    def test_audit_report(self, client, auth_headers, pipeline_id, node_id):
+        run = post_json(client, f'{V}/pipelines/{pipeline_id}/execute', {}, headers=auth_headers).get_json()
+        resp = client.get(f"{V}/runs/{run['run_id']}/audit-report", headers=auth_headers)
+        assert resp.status_code == 200
+        d = resp.get_json()
+        assert d['report_type'] == 'compliance_audit'
+        assert 'compliance' in d and 'pii_anonymised' in d['compliance']
+        assert isinstance(d['steps'], list)
+
 
 class TestAIAliases:
     def test_generate_sql_alias(self, client, auth_headers):

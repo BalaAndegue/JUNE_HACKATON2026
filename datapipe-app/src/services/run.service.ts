@@ -103,6 +103,12 @@ export const runService = {
     return res.data
   },
 
+  // Banking compliance audit report (exportable)
+  getAuditReport: async (runId: string) => {
+    const res = await api.get(`/api/v1/runs/${runId}/audit-report`)
+    return res.data as Record<string, unknown>
+  },
+
   // SSE log streaming — returns EventSource
   streamLogs: (runId: string, onMessage: (log: LogEntry) => void, onEnd?: () => void) => {
     const token = typeof window !== 'undefined'
