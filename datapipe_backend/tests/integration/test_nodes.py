@@ -187,7 +187,7 @@ class TestNodeTypes:
         d = resp.get_json()
         assert 'node_types' in d
         assert 'by_category' in d
-        assert len(d['node_types']) == 20
+        assert len(d['node_types']) == 23
 
     def test_list_by_category(self, client, auth_headers):
         resp = client.get('/api/v1/node-types?category=Input', headers=auth_headers)

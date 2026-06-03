@@ -5,50 +5,34 @@ import time
 import json
 
 from ..extensions import db
-from ..models import Run, RunLog, Node, Pipeline
+from ..models import Run, RunLog, Node, Pipeline, AuditLog
 from ..utils import check_pipeline_access, paginate
+from ..engine import execute_pipeline
 
 runs_bp = Blueprint('runs', __name__)
 
 
-def _simulate_run(pipeline, run):
-    """Simulate pipeline execution node by node."""
-    nodes = pipeline.nodes
-    results = {}
-
+def _execute(pipeline, run, user_id=None):
+    """Run a pipeline for real through the execution engine and persist logs."""
     run.status = 'running'
     db.session.commit()
 
-    for i, node in enumerate(nodes):
-        log = RunLog(
-            run_id=run.id,
-            node_id=node.id,
-            level='info',
-            message=f'Executing node: {node.label or node.type_slug}',
-        )
-        db.session.add(log)
+    logs = execute_pipeline(pipeline, run)
 
-        mock_rows = 100 + (i * 37)
-        results[node.id] = {
-            'status': 'success',
-            'rows_processed': mock_rows,
-            'rows_output': mock_rows,
-            'duration_ms': 120 + (i * 45),
-            'output_preview': [
-                {'id': j + 1, 'montant': round(1000 + j * 157.3, 2), 'date': '2026-06-01'}
-                for j in range(min(3, mock_rows))
-            ],
-        }
-
-    run.status = 'success'
-    run.finished_at = datetime.utcnow()
-    run.node_results = results
-
-    success_log = RunLog(run_id=run.id, level='info', message='Pipeline completed successfully')
-    db.session.add(success_log)
+    for node_id, level, message in logs:
+        db.session.add(RunLog(run_id=run.id, node_id=node_id,
+                              level=level, message=message))
 
     pipeline.last_run_at = run.started_at
-    pipeline.last_run_status = 'success'
+    pipeline.last_run_status = run.status
+
+    # Real banking audit trail — every execution is traceable.
+    db.session.add(AuditLog(
+        user_id=user_id,
+        action='pipeline.run',
+        resource_type='pipeline',
+        resource_id=pipeline.id,
+    ))
     db.session.commit()
 
 
@@ -72,7 +56,7 @@ def trigger_run(pipeline_id):
     db.session.add(run)
     db.session.flush()
 
-    _simulate_run(pipeline, run)
+    _execute(pipeline, run, user_id)
     return jsonify(run.to_dict(include_results=True)), 201
 
 
@@ -151,7 +135,7 @@ def retry_run(pipeline_id, run_id):
     new_run = Run(pipeline_id=pipeline_id, trigger='retry', status='pending')
     db.session.add(new_run)
     db.session.flush()
-    _simulate_run(pipeline, new_run)
+    _execute(pipeline, new_run, user_id)
     return jsonify(new_run.to_dict(include_results=True)), 201
 
 

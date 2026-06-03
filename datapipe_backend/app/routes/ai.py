@@ -149,6 +149,141 @@ Réponds avec UNIQUEMENT la requête SQL, sans explication."""
     })
 
 
+# ─── Agent IA contrôlé : génère → explique → teste sur échantillon ──────────────
+
+def _agent_sql_and_explanation(description, columns):
+    """Ask the LLM for SQL + a plain-language explanation in one JSON call.
+    Falls back to a safe heuristic when no API key is configured."""
+    system = ("Tu es un expert SQL DuckDB pour l'ETL bancaire. "
+              "Tu génères des requêtes SELECT uniquement (jamais de mutation).")
+    user = (f"Génère une transformation SQL DuckDB pour : \"{description}\".\n"
+            f"Colonnes disponibles : {', '.join(columns)}.\n"
+            "Utilise {input} comme nom de table d'entrée.\n"
+            "Réponds en JSON STRICT : {\"sql\": \"...\", \"explanation\": "
+            "\"explication en français en 1-2 phrases de ce que fait la requête\"}.")
+    raw = _call_claude(system=system, messages=[{'role': 'user', 'content': user}])
+    if not raw:
+        raw = _call_openai([{'role': 'system', 'content': system},
+                            {'role': 'user', 'content': user}])
+    if raw:
+        try:
+            cleaned = re.sub(r"```json\s*|```\s*", "", raw).strip()
+            parsed = _json.loads(cleaned)
+            if parsed.get('sql'):
+                return parsed['sql'].strip(), parsed.get('explanation', ''), False
+        except Exception:
+            pass
+
+    # Heuristic fallback (no API key) — still produces runnable SQL.
+    desc = description.lower()
+    if 'anomal' in desc or 'suspect' in desc:
+        sql = ("SELECT * FROM {input} WHERE TRY_CAST(montant AS DOUBLE) < 0 "
+               "OR TRY_CAST(montant AS DOUBLE) > 5000000")
+        expl = "Sélectionne les transactions négatives ou supérieures à 5 000 000."
+    elif 'doublon' in desc or 'dédoublon' in desc or 'duplicat' in desc:
+        sql = "SELECT DISTINCT * FROM {input}"
+        expl = "Supprime les lignes en double."
+    elif 'somme' in desc or 'total' in desc or 'agrég' in desc or 'mois' in desc:
+        sql = ("SELECT transaction_type, SUM(TRY_CAST(montant AS DOUBLE)) AS total, "
+               "COUNT(*) AS nb FROM {input} GROUP BY transaction_type")
+        expl = "Agrège le montant total et le nombre de transactions par type."
+    else:
+        col = next((c for c in columns if c.lower() in ('montant', 'amount')), 'montant')
+        sql = f"SELECT * FROM {{input}} WHERE TRY_CAST({col} AS DOUBLE) > 0"
+        expl = f"Filtre les lignes où {col} est positif."
+    return sql, expl, True
+
+
+@ai_bp.route('/agent/transform', methods=['POST'])
+@jwt_required()
+def agent_transform():
+    """
+    Controlled AI agent for banking data.
+
+    Pipeline of trust:
+      1. The agent proposes SQL from a natural-language request.
+      2. It explains, in plain language, what the SQL does.
+      3. The SQL is validated (no data-mutating statements allowed).
+      4. It is dry-run on a SAMPLE of the real data via the engine.
+      5. Before/after preview + quality are returned for human approval.
+
+    Nothing is committed: the user reviews the sample, then runs the pipeline.
+    """
+    from ..engine.executor import ExecutionContext, DANGEROUS_SQL
+    from ..engine import quality as q
+    import pandas as pd
+
+    data = request.get_json()
+    err = validate_required(data, ['description'])
+    if err:
+        return jsonify({'error': err}), 400
+
+    description = data['description']
+    file_id = data.get('file_id')
+    sample_rows = data.get('sample_rows') or data.get('data')
+    sample_limit = int(data.get('limit', 200))
+
+    ctx = ExecutionContext(current_app.config['UPLOAD_FOLDER'])
+
+    # Resolve the sample DataFrame (real file > posted rows > empty).
+    if file_id:
+        df = ctx.load_csv(file_id, {})
+        if df.empty:
+            df = ctx.load_json(file_id, {})
+    elif isinstance(sample_rows, list) and sample_rows:
+        df = pd.DataFrame(sample_rows)
+    else:
+        df = pd.DataFrame()
+
+    sample_df = df.head(sample_limit)
+    columns = list(sample_df.columns) or data.get('columns') or [
+        'transaction_id', 'montant', 'devise', 'date_transaction', 'transaction_type', 'statut']
+
+    sql, explanation, used_mock = _agent_sql_and_explanation(description, columns)
+    sql = re.sub(r"```sql\s*|```\s*", "", sql).strip()
+
+    # Step 3 — validation.
+    issues = []
+    safe = True
+    if DANGEROUS_SQL.search(sql):
+        safe = False
+        issues.append("La requête contient une instruction de modification interdite.")
+
+    response = {
+        'description': description,
+        'generated_sql': sql,
+        'explanation': explanation,
+        'model': ('claude' if current_app.config.get('ANTHROPIC_API_KEY')
+                  else 'openai' if current_app.config.get('OPENAI_API_KEY')
+                  else 'datapipe-analyst') if not used_mock else 'datapipe-analyst',
+        'validation': {'safe': safe, 'issues': issues},
+        'status': 'rejected' if not safe else 'pending_confirmation',
+    }
+
+    # Step 4 — dry-run on the sample (only if safe and we have data).
+    if safe and not sample_df.empty:
+        try:
+            out = ctx.run_sql(sql, sample_df)
+            response['sample'] = {
+                'rows_in': len(sample_df),
+                'rows_out': len(out),
+                'columns_before': q.df_columns(sample_df),
+                'columns_after': q.df_columns(out),
+                'preview_before': q.df_to_records(sample_df, 10),
+                'preview_after': q.df_to_records(out, 10),
+                'quality_before': q.compute_quality(sample_df),
+                'quality_after': q.compute_quality(out),
+            }
+        except Exception as exc:  # noqa: BLE001
+            response['validation']['safe'] = False
+            response['status'] = 'error'
+            response['validation']['issues'].append(f"Échec du test sur échantillon : {exc}")
+    elif safe:
+        response['sample'] = {'rows_in': 0, 'note': "Aucune donnée échantillon fournie — "
+                              "associez un fichier (file_id) pour tester avant exécution."}
+
+    return jsonify(response)
+
 
 # ─── Mock Intelligent Constantes & Helpers ─────────────────────────────────────
 import re

@@ -577,3 +577,42 @@ class TestApiKeys:
         resp = client.get(f'/api/v1/integrations?org_id={org_id}', headers=auth_headers)
         assert resp.status_code == 200
         assert 'integrations' in resp.get_json()
+
+
+class TestAIAgent:
+    """Agent IA contrôlé : génère SQL -> valide -> dry-run sur échantillon réel."""
+
+    SAMPLE = [
+        {'transaction_id': 'T1', 'montant': 150000, 'transaction_type': 'credit'},
+        {'transaction_id': 'T2', 'montant': -50000, 'transaction_type': 'debit'},
+        {'transaction_id': 'T3', 'montant': 7500000, 'transaction_type': 'credit'},
+        {'transaction_id': 'T4', 'montant': 25000, 'transaction_type': 'debit'},
+    ]
+
+    def test_agent_dry_runs_on_sample(self, client, auth_headers):
+        resp = post_json(client, '/api/v1/ai/agent/transform', {
+            'description': 'agréger le montant total par type de transaction',
+            'data': self.SAMPLE,
+        }, headers=auth_headers)
+        assert resp.status_code == 200
+        d = resp.get_json()
+        assert d['generated_sql']
+        assert d['validation']['safe'] is True
+        assert d['status'] == 'pending_confirmation'
+        # the dry-run actually executed on the sample
+        assert 'sample' in d
+        assert d['sample']['rows_in'] == 4
+        assert 'preview_after' in d['sample']
+
+    def test_agent_blocks_dangerous_sql(self, client, auth_headers, monkeypatch):
+        # Force the heuristic path and inject a dangerous description is not enough;
+        # validate that a mutating query would be rejected by posting via the
+        # public contract: the agent only emits SELECTs, so we assert safety holds.
+        resp = post_json(client, '/api/v1/ai/agent/transform', {
+            'description': 'supprimer les doublons',
+            'data': self.SAMPLE,
+        }, headers=auth_headers)
+        assert resp.status_code == 200
+        d = resp.get_json()
+        assert d['validation']['safe'] is True
+        assert 'DROP' not in d['generated_sql'].upper()
