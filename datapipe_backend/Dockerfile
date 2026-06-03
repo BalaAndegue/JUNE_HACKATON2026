@@ -20,4 +20,5 @@ RUN mkdir -p /app/instance /app/uploads
 EXPOSE 5000
 
 # Production server. run.py exposes `app = create_app()`.
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "3", "--timeout", "120", "run:app"]
+# 1 worker + threads : le pub/sub SSE temps réel (Telegram -> web) est in-process.
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "8", "--timeout", "120", "run:app"]
