@@ -88,41 +88,40 @@ jobs:
             echo "Configuration de Docker pour éviter les blocages de téléchargement..."
             sudo mkdir -p /etc/docker || mkdir -p /etc/docker
             
-            # Script Python d'optimisation
-            OPT_SCRIPT='
-import json, os, subprocess
-path = "/etc/docker/daemon.json"
-data = {}
-if os.path.exists(path):
-    try:
-        with open(path, "r") as f:
-            data = json.load(f)
-    except Exception:
-        pass
-data["max-concurrent-downloads"] = 1
-try:
-    route_out = subprocess.check_output("ip route show", shell=True).decode()
-    default_interface = None
-    for line in route_out.splitlines():
-        if "default" in line:
-            parts = line.split()
-            if "dev" in parts:
-                default_interface = parts[parts.index("dev") + 1]
-                break
-    if default_interface:
-        link_out = subprocess.check_output(f"ip link show {default_interface}", shell=True).decode()
-        parts = link_out.split()
-        if "mtu" in parts:
-            mtu_val = int(parts[parts.index("mtu") + 1])
-            if mtu_val < 1500:
-                data["mtu"] = mtu_val
-                print("MTU configure a", mtu_val)
-except Exception as e:
-    print("Erreur detection MTU:", e)
-with open(path, "w") as f:
-    json.dump(data, f, indent=2)
-'
-            sudo python3 -c "$OPT_SCRIPT" || python3 -c "$OPT_SCRIPT" || echo '{"max-concurrent-downloads": 1}' | sudo tee /etc/docker/daemon.json || echo '{"max-concurrent-downloads": 1}' > /etc/docker/daemon.json
+            # Configuration de Docker avec script Python (utilisant textwrap.dedent pour conserver l'indentation YAML correcte)
+            sudo python3 -c 'import textwrap; exec(textwrap.dedent("""
+                import json, os, subprocess
+                path = "/etc/docker/daemon.json"
+                data = {}
+                if os.path.exists(path):
+                    try:
+                        with open(path, "r") as f:
+                            data = json.load(f)
+                    except Exception:
+                        pass
+                data["max-concurrent-downloads"] = 1
+                try:
+                    route_out = subprocess.check_output("ip route show", shell=True).decode()
+                    default_interface = None
+                    for line in route_out.splitlines():
+                        if "default" in line:
+                            parts = line.split()
+                            if "dev" in parts:
+                                default_interface = parts[parts.index("dev") + 1]
+                                break
+                    if default_interface:
+                        link_out = subprocess.check_output(f"ip link show {default_interface}", shell=True).decode()
+                        parts = link_out.split()
+                        if "mtu" in parts:
+                            mtu_val = int(parts[parts.index("mtu") + 1])
+                            if mtu_val < 1500:
+                                data["mtu"] = mtu_val
+                                print("MTU configure a", mtu_val)
+                except Exception as e:
+                    print("Erreur detection MTU:", e)
+                with open(path, "w") as f:
+                    json.dump(data, f, indent=2)
+            """))' || echo '{"max-concurrent-downloads": 1}' | sudo tee /etc/docker/daemon.json || echo '{"max-concurrent-downloads": 1}' > /etc/docker/daemon.json
 
             # 2. Redémarrage de Docker pour appliquer la configuration
             echo "Redémarrage du service Docker..."
