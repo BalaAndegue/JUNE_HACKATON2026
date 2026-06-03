@@ -91,8 +91,7 @@ jobs:
             cd ~/JUNE_HACKATON2026
             
             # Écrire directement le fichier docker-compose.yml sur le VPS
-            cat << 'EOF' > docker-compose.yml
-            version: '3.8'
+            echo 'version: "3.8"
             
             services:
               backend:
@@ -109,8 +108,7 @@ jobs:
             
             volumes:
               datapipe_data:
-              datapipe_uploads:
-            EOF
+              datapipe_uploads:' > docker-compose.yml
             
             # Connexion au registre sur le VPS pour avoir le droit de pull
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
