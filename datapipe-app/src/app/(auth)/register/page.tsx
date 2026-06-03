@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Zap, ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
+import Image from 'next/image'
 import { authService } from '@/services/auth.service'
 import { toast } from 'sonner'
 import { Poppins } from 'next/font/google'
@@ -267,13 +268,7 @@ export default function RegisterPage() {
               {/* Logo */}
               <div style={{ marginBottom: 28 }}>
                 <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-                  <div style={{
-                    width: 34, height: 34, background: '#ff6d35', borderRadius: 9,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 0 16px rgba(255,109,53,0.35)',
-                  }}>
-                    <Zap style={{ width: 16, height: 16, color: '#fff' }} fill="white" />
-                  </div>
+                  <Image src="/logo.png" alt="DataPipe" width={52} height={52} style={{ borderRadius: 9 }} />
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.2px' }}>DataPipe</span>
                 </Link>
               </div>

@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/auth.store'
-import { Zap } from 'lucide-react'
+import Image from 'next/image'
 
 export default function DemoPage() {
   const router = useRouter()
@@ -17,9 +17,7 @@ export default function DemoPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a0b]">
       <div className="flex flex-col items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ff6d35] animate-pulse">
-          <Zap className="h-6 w-6 text-white" fill="white" />
-        </div>
+        <Image src="/logo.png" alt="DataPipe" width={64} height={64} className="rounded-2xl animate-pulse" />
         <p className="text-sm text-gray-500">Chargement du mode démo…</p>
       </div>
     </div>

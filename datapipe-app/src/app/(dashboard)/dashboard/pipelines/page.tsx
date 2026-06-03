@@ -36,10 +36,16 @@ export default function PipelinesPage() {
     loadPipelines()
   }, [search])
 
+  const DEMO_PIPELINES: Pipeline[] = [
+    { id: 'demo-sales', name: 'Analyse des ventes 2024', description: 'CSV → Filtre → Agrégation → Chart', nodes_count: 4, last_run_status: 'success', last_run_at: new Date(Date.now() - 3600000).toISOString(), workspace_id: 'demo', created_at: '', updated_at: '' },
+    { id: 'demo-crm',   name: 'Nettoyage CRM clients',  description: 'JSON → Nettoyage → Rename → Export', nodes_count: 4, last_run_status: 'success', last_run_at: new Date(Date.now() - 7200000).toISOString(), workspace_id: 'demo', created_at: '', updated_at: '' },
+    { id: 'demo-ai',    name: 'IA Transform — revenus',  description: 'CSV → IA Transform → Table Preview', nodes_count: 3, last_run_status: 'failed',  last_run_at: new Date(Date.now() - 900000).toISOString(),  workspace_id: 'demo', created_at: '', updated_at: '' },
+  ]
+
   const loadPipelines = async () => {
     if (isDemoMode) {
       setIsLoading(false)
-      setPipelines([])
+      setPipelines(DEMO_PIPELINES)
       return
     }
     setIsLoading(true)

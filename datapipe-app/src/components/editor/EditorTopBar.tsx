@@ -111,19 +111,13 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
     <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#1e1e1e] bg-[#0a0a0a] px-4">
       {/* Left */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.push('/dashboard/pipelines')}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Separator orientation="vertical" className="h-5" />
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#ff6d35]/15">
-            <Zap className="h-3.5 w-3.5 text-[#ff6d35]" />
-          </div>
-          <span className="text-sm font-semibold text-gray-200">{pipeline?.name}</span>
-          {isDirty && (
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title="Modifications non sauvegardées" />
-          )}
+        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#ff6d35]/15">
+          <Zap className="h-3.5 w-3.5 text-[#ff6d35]" />
         </div>
+        <span className="text-sm font-semibold text-gray-200">{pipeline?.name}</span>
+        {isDirty && (
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title="Modifications non sauvegardées" />
+        )}
       </div>
 
       {/* Right */}
@@ -188,27 +182,6 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
           <Save className="h-3.5 w-3.5" />
           {isSaving ? 'Sauvegarde…' : 'Sauvegarder'}
         </Button>
-
-        {isRunning ? (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleCancel}
-            className="gap-1.5"
-          >
-            <Square className="h-3.5 w-3.5" />
-            Arrêter
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            onClick={handleRun}
-            className="gap-1.5 bg-emerald-600 hover:bg-emerald-600/90 text-white"
-          >
-            <Play className="h-3.5 w-3.5" fill="currentColor" />
-            Exécuter
-          </Button>
-        )}
       </div>
     </div>
   )

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Zap, ArrowRight, Play, Check, Sparkles, BarChart3, LayoutGrid } from 'lucide-react'
+import Image from 'next/image'
 import { useAuthStore } from '@/store/auth.store'
 import { Poppins } from 'next/font/google'
 
@@ -639,89 +640,273 @@ function ActorsSection() {
 // ─────────────────────────────────────────────────────────────────────────
 // Sticky features
 // ─────────────────────────────────────────────────────────────────────────
+// ─── Feature visual 1 — Import (auto-animating upload) ────────────────────
+const IMPORT_FILES = [
+  { name: 'ventes_2024.csv',     size: '2.4 MB',  rows: 12847,  schema: ['id','montant','région','date'] },
+  { name: 'clients_export.json', size: '890 KB',   rows: 3204,   schema: ['client_id','nom','email','pays'] },
+  { name: 'transactions.csv',    size: '45 MB',    rows: 189432, schema: ['tx_id','compte','montant','statut'] },
+]
+type FilePhase = 'idle' | 'loading' | 'done'
+
+function ImportVisual() {
+  const { ref, visible } = useInView(0.3)
+  const [phases, setPhases]   = useState<FilePhase[]>(['idle','idle','idle'])
+  const [progress, setProgress] = useState([0,0,0])
+  const [expanded, setExpanded] = useState<number|null>(null)
+  const running = useRef(false)
+
+  const run = useCallback(() => {
+    if (running.current) return
+    running.current = true
+    setPhases(['idle','idle','idle'])
+    setProgress([0,0,0])
+    setExpanded(null)
+
+    IMPORT_FILES.forEach((_, fi) => {
+      setTimeout(() => {
+        setPhases(p => { const n=[...p]; n[fi]='loading'; return n })
+        let pct = 0
+        const speed = fi === 2 ? 40 : 18
+        const iv = setInterval(() => {
+          pct += fi === 2 ? 2 : 6
+          setProgress(p => { const n=[...p]; n[fi]=Math.min(pct,100); return n })
+          if (pct >= 100) {
+            clearInterval(iv)
+            setPhases(p => { const n=[...p]; n[fi]='done'; return n })
+            if (fi === IMPORT_FILES.length - 1) {
+              running.current = false
+              setTimeout(run, 5000)
+            }
+          }
+        }, speed)
+      }, fi * 900)
+    })
+  }, [])
+
+  useEffect(() => { if (visible) setTimeout(run, 500) }, [visible, run])
+
+  return (
+    <div ref={ref} className="space-y-1.5">
+      {IMPORT_FILES.map((f, i) => (
+        <div key={i}>
+          <div
+            onClick={() => setExpanded(expanded === i ? null : i)}
+            className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all"
+            style={{
+              background: expanded === i ? 'rgba(255,109,53,0.06)' : 'rgba(255,255,255,0.025)',
+              border: `1px solid ${expanded===i ? 'rgba(255,109,53,0.3)' : 'rgba(255,255,255,0.07)'}`,
+            }}
+          >
+            <div className="h-2 w-2 shrink-0 rounded-full" style={{
+              background: phases[i]==='done' ? '#10b981' : phases[i]==='loading' ? '#3b82f6' : 'rgba(255,255,255,0.12)',
+              animation: phases[i]==='loading' ? 'pulse-dot 1.2s infinite' : 'none',
+            }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-300 truncate">{f.name}</p>
+              <p className="text-[11px] text-gray-600 mt-0.5">
+                {phases[i]==='done'
+                  ? `${f.size} · ${f.rows.toLocaleString('fr-FR')} lignes`
+                  : phases[i]==='loading'
+                  ? `${f.size} · ${progress[i]}%`
+                  : f.size}
+              </p>
+            </div>
+            {phases[i]==='loading' && (
+              <div className="w-14 h-1 rounded-full overflow-hidden shrink-0" style={{ background:'rgba(255,255,255,0.08)' }}>
+                <div className="h-full rounded-full bg-blue-400" style={{ width:`${progress[i]}%`, transition:'width 0.1s linear' }} />
+              </div>
+            )}
+          </div>
+          {expanded===i && phases[i]==='done' && (
+            <div className="mx-2 -mt-1 rounded-b-xl px-4 py-2.5" style={{
+              background:'rgba(255,109,53,0.04)', border:'1px solid rgba(255,109,53,0.18)', borderTop:'none',
+              animation:'slide-up 0.2s ease',
+            }}>
+              <p className="text-[9px] uppercase tracking-widest text-gray-700 mb-1.5">Colonnes détectées</p>
+              <div className="flex flex-wrap gap-1.5">
+                {f.schema.map(col => (
+                  <span key={col} className="text-[10px] font-mono text-[#ff6d35] rounded px-1.5 py-0.5" style={{ background:'rgba(255,109,53,0.1)' }}>{col}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Feature visual 2 — Transform (clickable operator + aggregation) ───────
+const OPS = ['>', '>=', '<', '<=', '==', '!='] as const
+type Op = typeof OPS[number]
+const OP_COUNTS: Record<Op,number> = { '>':4231,'>=':5102,'<':8616,'<=':7745,'==':1847,'!=':11000 }
+const AGGS = { SUM:'1 234 567 €', COUNT:'12 847', AVG:'96.1 €', MAX:'4 872 €' } as const
+
+function TransformVisual() {
+  const [op, setOp]   = useState<Op>('>')
+  const [agg, setAgg] = useState<keyof typeof AGGS>('SUM')
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl px-4 py-3.5" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.06)' }}>
+        <p className="text-[10px] uppercase tracking-widest text-gray-700 mb-2.5">Filtre actif</p>
+        <p className="font-mono text-sm text-gray-200">
+          montant{' '}
+          <button
+            onClick={() => setOp(OPS[(OPS.indexOf(op)+1) % OPS.length])}
+            className="rounded px-1.5 py-0.5 font-bold transition-all hover:bg-[#ff6d35]/20 active:scale-90 cursor-pointer"
+            style={{ color:'#ff6d35' }} title="Cliquer pour changer l'opérateur"
+          >{op}</button>
+          {' '}500
+        </p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="text-[11px] font-mono text-emerald-400 transition-all">
+            {OP_COUNTS[op].toLocaleString('fr-FR')} lignes retenues sur 12 847
+          </span>
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {(Object.keys(AGGS) as Array<keyof typeof AGGS>).map(fn => (
+          <button key={fn} onClick={() => setAgg(fn)} className="rounded-lg py-2 text-center transition-all active:scale-95" style={{
+            background: agg===fn ? 'rgba(255,109,53,0.15)' : 'rgba(255,255,255,0.03)',
+            border: `1px solid ${agg===fn ? 'rgba(255,109,53,0.4)' : 'rgba(255,255,255,0.07)'}`,
+          }}>
+            <p className="text-xs font-bold font-mono" style={{ color: agg===fn ? '#ff6d35' : '#6b7280' }}>{fn}</p>
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.05)' }}>
+        <span className="text-[10px] text-gray-600 font-mono">{agg}(montant) =</span>
+        <span className="ml-auto text-sm font-bold text-white font-mono">{AGGS[agg]}</span>
+      </div>
+    </div>
+  )
+}
+
+// ─── Feature visual 3 — Visualise (animated bars + click + sort + export) ──
+const CHART_BARS = [
+  { label:'IDF', v:92, name:'Île-de-France',           ca:'2.4M€' },
+  { label:'ARA', v:67, name:'Auvergne-Rhône-Alpes',    ca:'1.7M€' },
+  { label:'OCC', v:54, name:'Occitanie',                ca:'1.4M€' },
+  { label:'NOR', v:43, name:'Normandie',                ca:'1.1M€' },
+  { label:'BFC', v:38, name:'Bourgogne-F-Comté',        ca:'980K€' },
+  { label:'PDL', v:61, name:'Pays de la Loire',         ca:'1.6M€' },
+]
+
+function VisualiseVisual() {
+  const { ref, visible } = useInView(0.3)
+  const [animated, setAnimated] = useState(false)
+  const [selected, setSelected] = useState<number|null>(null)
+  const [sorted,   setSorted]   = useState(false)
+  const [exported, setExported] = useState(false)
+
+  useEffect(() => { if (visible) setTimeout(() => setAnimated(true), 200) }, [visible])
+
+  const bars = sorted ? [...CHART_BARS].sort((a,b) => b.v-a.v) : CHART_BARS
+
+  const doExport = () => { setExported(true); setTimeout(() => setExported(false), 1800) }
+
+  return (
+    <div ref={ref} className="space-y-3">
+      <div className="relative flex items-end gap-2 h-20">
+        {bars.map((b, i) => (
+          <div
+            key={b.label}
+            onClick={() => setSelected(selected===i ? null : i)}
+            className="flex flex-1 flex-col items-center gap-1 cursor-pointer group"
+          >
+            <div className="w-full rounded-t-md transition-all duration-500" style={{
+              height: animated ? `${b.v}%` : '0%',
+              transitionDelay: `${i*55}ms`,
+              background: selected===i ? '#ff6d35' : `rgba(255,109,53,${0.28+i*0.05})`,
+              boxShadow: selected===i ? '0 0 10px rgba(255,109,53,0.45)' : 'none',
+            }} />
+            <span className="text-[8px] transition-colors" style={{ color: selected===i ? '#ff6d35' : '#4b5563' }}>{b.label}</span>
+          </div>
+        ))}
+        {selected !== null && (
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white whitespace-nowrap pointer-events-none"
+            style={{ background:'#ff6d35', boxShadow:'0 4px 14px rgba(255,109,53,0.4)', animation:'slide-up 0.2s ease' }}>
+            {bars[selected].name} · {bars[selected].ca}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setSorted(s => !s)}
+          className="flex-1 rounded-lg py-2 text-[11px] font-semibold transition-all hover:bg-white/6 active:scale-95"
+          style={{ background:'rgba(255,255,255,0.025)', border:`1px solid ${sorted?'rgba(255,109,53,0.35)':'rgba(255,255,255,0.07)'}`, color:sorted?'#ff6d35':'#6b7280' }}
+        >
+          {sorted ? 'Trié ↓' : 'Trier ↓'}
+        </button>
+        <button
+          onClick={doExport}
+          className="flex-1 rounded-lg py-2 text-[11px] font-semibold transition-all active:scale-95"
+          style={{
+            background: exported ? 'rgba(16,185,129,0.12)' : 'rgba(255,109,53,0.1)',
+            border: `1px solid ${exported?'rgba(16,185,129,0.3)':'rgba(255,109,53,0.25)'}`,
+            color: exported ? '#10b981' : '#ff6d35',
+          }}
+        >
+          {exported ? '✓ Téléchargé' : 'Exporter CSV'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Feature definitions (texte/structure inchangés) ───────────────────────
 const FEATURES = [
   {
     tag: 'Import', color: '#00e5a0', bg: '#0a0a0b',
     title: "Vos données dans l'éditeur en 30 secondes.",
     body: "Uploadez un CSV, collez une URL d'API, ou tapez du SQL. DataPipe détecte le schéma et infère les types.",
-    visual: (
-      <div className="space-y-2.5">
-        {[
-          { name: 'ventes_2024.csv',      info: '2.4 MB · 12 847 lignes', ok: true },
-          { name: 'clients_export.json',  info: '890 KB · 3 204 lignes',  ok: true },
-          { name: 'transactions.csv',     info: '45 MB · chargement…',    ok: false },
-        ].map((f, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-white/4"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <div className={`h-2 w-2 shrink-0 rounded-full ${f.ok ? 'bg-emerald-400' : 'bg-blue-400'}`}
-              style={f.ok ? {} : { animation: 'pulse-dot 1.5s infinite' }} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-300 truncate">{f.name}</p>
-              <p className="text-[11px] text-gray-600 mt-0.5">{f.info}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    ),
+    Visual: ImportVisual,
   },
   {
     tag: 'Transform', color: '#ff6d35', bg: '#0c0c10',
     title: 'Configurez, prévisualisez, ajustez.',
     body: 'Filter, Join, Aggregate, Rename, Clean — chaque nœud est une boîte de dialogue. Configurez en cliquant.',
-    visual: (
-      <div className="space-y-3">
-        <div className="rounded-xl px-4 py-3.5" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-[10px] uppercase tracking-widest text-gray-700 mb-2.5">Filtre actif</p>
-          <p className="font-mono text-sm text-gray-200">montant <span className="text-[#ff6d35]">&gt;</span> 500</p>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="text-[11px] font-mono text-emerald-400">4 231 lignes retenues sur 12 847</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {['SUM', 'COUNT', 'AVG', 'MAX'].map(fn => (
-            <div key={fn} className="rounded-lg py-2 text-center transition-colors hover:bg-white/6 cursor-default"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-xs font-bold text-gray-400 font-mono">{fn}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
+    Visual: TransformVisual,
   },
   {
     tag: 'Visualise', color: '#ff6d35', bg: '#0e0e13',
     title: 'Voyez le résultat, ajustez, exportez.',
     body: "Après chaque run, consultez les données dans la console, générez un graphique en un clic, ou téléchargez.",
-    visual: (
-      <div className="space-y-3">
-        <div className="flex items-end gap-2 h-20">
-          {[{ label:'IDF',v:92},{ label:'ARA',v:67},{ label:'OCC',v:54},{ label:'NOR',v:43},{ label:'BFC',v:38},{ label:'PDL',v:61}].map((b,i)=>(
-            <div key={i} className="flex flex-1 flex-col items-center gap-1 group cursor-default">
-              <div className="w-full rounded-t-md transition-all duration-200 group-hover:opacity-100"
-                style={{ height:`${b.v}%`, background:`rgba(255,109,53,${0.3+i*0.06})` }} />
-              <span className="text-[8px] text-gray-600">{b.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-between rounded-xl border px-4 py-2.5"
-          style={{ borderColor: 'rgba(255,109,53,0.2)', background: 'rgba(255,109,53,0.06)' }}>
-          <span className="text-xs text-[#ff6d35] font-semibold">rapport_final.csv</span>
-          <span className="text-[10px] text-gray-600">4.2 KB · prêt</span>
-        </div>
-      </div>
-    ),
+    Visual: VisualiseVisual,
   },
 ]
 
 function StickyFeatures() {
   return (
-    <section className="border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+    /* Le wrapper doit être non-overflow pour que sticky fonctionne */
+    <section className="border-t relative" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
       {FEATURES.map((f, i) => (
-        <div key={i} className="sticky top-0"
-          style={{ zIndex: 10 + i, background: f.bg, borderRadius: i > 0 ? '24px 24px 0 0' : undefined }}>
-          <div className="mx-auto flex max-w-5xl flex-col gap-12 px-6 py-24 md:flex-row md:items-center md:gap-20"
-            style={{ flexDirection: i % 2 === 0 ? undefined : 'row-reverse' }}>
+        <div
+          key={i}
+          className="sticky top-0 flex items-center"
+          style={{
+            /* z-index croissant : chaque carte passe par-dessus la précédente */
+            zIndex: 10 + i * 10,
+            minHeight: '100vh',
+            background: f.bg,
+            /* Coins arrondis en haut pour l'effet "carte qui monte" */
+            borderRadius: i > 0 ? '28px 28px 0 0' : undefined,
+            /* Ombre portée vers le haut — crée la profondeur entre les cartes */
+            boxShadow: i > 0 ? '0 -20px 60px rgba(0,0,0,0.55)' : undefined,
+          }}
+        >
+          {/* Trait supérieur décoratif sur les cartes 2 et 3 */}
+          {i > 0 && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 h-1 w-12 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.08)' }} />
+          )}
+
+          <div
+            className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-6 py-20 md:flex-row md:items-center md:gap-20"
+            style={{ flexDirection: i % 2 === 0 ? undefined : 'row-reverse' }}
+          >
             <Reveal className="flex-1 space-y-5">
               <span className="inline-block rounded-full px-3 py-1 text-xs font-semibold"
                 style={{ background: 'rgba(255,109,53,0.12)', border: '1px solid rgba(255,109,53,0.25)', color: '#ff6d35' }}>
@@ -732,7 +917,7 @@ function StickyFeatures() {
             </Reveal>
             <Reveal delay={100} className="w-full md:w-100 shrink-0 rounded-2xl p-5"
               style={{ background: '#111116', border: '1px solid rgba(255,255,255,0.06)' }}>
-              {f.visual}
+              <f.Visual />
             </Reveal>
           </div>
         </div>
@@ -873,9 +1058,7 @@ function Footer() {
               {/* Brand */}
               <div className="md:col-span-1 space-y-5">
                 <Link href="/" className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff6d35]">
-                    <Zap className="h-3.5 w-3.5 text-white" fill="white" />
-                  </div>
+                  <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg" />
                   <span className="text-sm font-bold text-gray-200">DataPipe</span>
                 </Link>
                 <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
@@ -1052,9 +1235,7 @@ export default function LandingPage() {
             height: 52, padding: '0 20px',
           }}>
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff6d35] transition-transform duration-200 group-hover:scale-110">
-                <Zap className="h-3.5 w-3.5 text-white" fill="white" />
-              </div>
+              <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg transition-transform duration-200 group-hover:scale-110" />
               <span className="text-sm font-bold text-white">DataPipe</span>
             </Link>
 

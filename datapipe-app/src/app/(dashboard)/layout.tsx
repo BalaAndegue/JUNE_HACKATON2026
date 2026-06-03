@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Navbar } from '@/components/layout/Navbar'
 import { useAuthStore } from '@/store/auth.store'
@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const isEditor = pathname?.includes('/editor')
   const { isAuthenticated, isLoading, isDemoMode, setUser, clearAuth, setLoading } = useAuthStore()
 
   useEffect(() => {
@@ -50,11 +52,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
+    // Tout l'écran est fixe — sidebar + contenu se partagent l'espace en flex
     <div className="flex h-screen overflow-hidden bg-[#0a0a0a]">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-auto">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* La navbar est cachée sur l'éditeur pour lui donner toute la hauteur */}
+        {!isEditor && <Navbar />}
+        {/* overflow-hidden sur l'éditeur = canvas fixe ; overflow-auto ailleurs = scroll normal */}
+        <main className={isEditor ? 'flex flex-1 overflow-hidden' : 'flex-1 overflow-auto'}>
           {children}
         </main>
       </div>

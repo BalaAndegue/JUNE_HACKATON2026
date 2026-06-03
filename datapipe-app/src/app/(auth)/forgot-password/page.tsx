@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Zap, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,9 +32,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] p-4">
       <div className="mb-8 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff6d35]">
-          <Zap className="h-5 w-5 text-white" fill="white" />
-        </div>
+        <Image src="/logo.png" alt="DataPipe" width={56} height={56} className="rounded-xl" />
         <span className="text-xl font-bold tracking-tight text-gray-100">DataPipe</span>
       </div>
 

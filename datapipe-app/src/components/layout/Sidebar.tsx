@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import {
   LayoutDashboard, GitBranch, FileUp, BarChart3, Settings,
-  Bell, Key, Zap,
+  Bell, Key, ChevronLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useNotificationStore } from '@/store/notification.store'
+import { useUIStore } from '@/store/ui.store'
 import { Badge } from '@/components/ui/badge'
 
 const navItems = [
@@ -24,15 +26,40 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const unreadCount = useNotificationStore((s) => s.unreadCount)
+  const { sidebarCollapsed, toggleSidebar } = useUIStore()
 
   return (
-    <aside className="flex h-full w-[220px] flex-col border-r border-[#1e1e1e] bg-[#0a0a0a]">
-      {/* Logo */}
-      <div className="flex h-14 items-center gap-2.5 border-b border-[#1e1e1e] px-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff6d35]">
-          <Zap className="h-4 w-4 text-white" fill="white" />
-        </div>
-        <span className="text-sm font-bold tracking-tight text-gray-100">DataPipe</span>
+    <aside className={cn(
+      'flex h-full flex-col border-r border-[#1e1e1e] bg-[#0a0a0a] transition-all duration-300',
+      sidebarCollapsed ? 'w-16' : 'w-[220px]'
+    )}>
+      {/* Logo / toggle */}
+      <div className="flex h-14 items-center border-b border-[#1e1e1e] px-3">
+        {sidebarCollapsed ? (
+          /* Collapsed : uniquement le bouton pour réouvrir, centré */
+          <button
+            onClick={toggleSidebar}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-[#141414] hover:text-gray-300 transition-colors mx-auto"
+            title="Déplier la sidebar"
+          >
+            <ChevronLeft className="h-4 w-4 rotate-180" />
+          </button>
+        ) : (
+          /* Expanded : logo + nom + bouton collapse */
+          <>
+            <div className="flex flex-1 items-center gap-2.5 min-w-0">
+              <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg shrink-0" />
+              <span className="text-sm font-bold tracking-tight text-gray-100 truncate">DataPipe</span>
+            </div>
+            <button
+              onClick={toggleSidebar}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-[#141414] hover:text-gray-300 transition-colors"
+              title="Réduire la sidebar"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Nav */}
@@ -43,19 +70,25 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              title={sidebarCollapsed ? item.label : undefined}
               className={cn(
                 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-[#ff6d35]/15 text-[#ff6d35]'
-                  : 'text-gray-500 hover:bg-[#141414] hover:text-gray-300'
+                  : 'text-gray-500 hover:bg-[#141414] hover:text-gray-300',
+                sidebarCollapsed && 'justify-center'
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {item.badge && unreadCount > 0 && (
-                <Badge variant="destructive" className="h-4 min-w-4 px-1 text-[10px]">
-                  {unreadCount}
-                </Badge>
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && unreadCount > 0 && (
+                    <Badge variant="destructive" className="h-4 min-w-4 px-1 text-[10px]">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </>
               )}
             </Link>
           )
@@ -64,9 +97,9 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="border-t border-[#1e1e1e] p-3">
-        <div className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-600">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          API connectée
+        <div className={cn('flex items-center rounded-md px-2 py-1.5 text-xs text-gray-600 transition-all', sidebarCollapsed && 'justify-center')}>
+          <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+          {!sidebarCollapsed && <span className="ml-2">API connectée</span>}
         </div>
       </div>
     </aside>

@@ -5,8 +5,9 @@ import { ReactFlowProvider } from '@xyflow/react'
 import { useEditorStore } from '@/store/editor.store'
 import { pipelineService } from '@/services/pipeline.service'
 import { nodeService } from '@/services/node.service'
+import { DEMO_PIPELINES_DATA } from '@/lib/demoPipelines'
 import { EditorTopBar } from './EditorTopBar'
-import { NodePanel } from './NodePanel'
+import { NodeDrawer } from './NodeDrawer'
 import { EditorCanvas } from './EditorCanvas'
 import { NodeInspector } from './NodeInspector'
 import { RunConsole } from './RunConsole'
@@ -29,6 +30,18 @@ export function PipelineEditor({ pipelineId }: PipelineEditorProps) {
   useEffect(() => {
     const load = async () => {
       try {
+        // Demo pipelines: load mock data without API
+        if (pipelineId.startsWith('demo-')) {
+          const mock = DEMO_PIPELINES_DATA[pipelineId]
+          if (mock) {
+            setPipeline(mock.pipeline)
+            setNodeTypes(mock.nodeTypes)
+            useEditorStore.getState().setNodes(mock.nodes)
+            useEditorStore.getState().setEdges(mock.edges)
+          }
+          setIsLoading(false)
+          return
+        }
         const [pipeline, nodeTypes] = await Promise.all([
           pipelineService.get(pipelineId),
           nodeService.getNodeTypes(),
@@ -51,14 +64,9 @@ export function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen flex-col bg-[#0a0a0a]">
+      <div className="flex h-full w-full flex-col bg-[#0a0a0a]">
         <div className="h-12 border-b border-[#1e1e1e] bg-[#0a0a0a]" />
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-[220px] border-r border-[#1e1e1e] p-3 space-y-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full" />
-            ))}
-          </div>
           <div className="flex-1 p-8 space-y-4">
             <Skeleton className="h-32 w-48 rounded-xl" />
             <Skeleton className="h-32 w-48 rounded-xl ml-64" />
@@ -70,20 +78,18 @@ export function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#0a0a0a]">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-[#0a0a0a]">
         {/* Top bar */}
         <EditorTopBar pipelineId={pipelineId} />
 
         {/* Main area */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Left: node panel */}
-          <NodePanel pipelineId={pipelineId} />
-
           {/* Center + bottom */}
           <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Canvas */}
-            <div className="flex-1 overflow-hidden">
+            {/* Canvas — relative pour que NodeDrawer soit contenu dedans */}
+            <div className="relative flex-1 overflow-hidden">
               <EditorCanvas pipelineId={pipelineId} />
+              <NodeDrawer pipelineId={pipelineId} />
             </div>
 
             {/* Console */}

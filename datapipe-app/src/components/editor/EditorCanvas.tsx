@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect } from 'react'
 import {
-  ReactFlow, Background, Controls, MiniMap, BackgroundVariant,
+  ReactFlow, Background, MiniMap, Panel, BackgroundVariant,
   type OnConnect, type NodeTypes, addEdge,
   type Node as RFNode,
 } from '@xyflow/react'
+import { CanvasControls } from './CanvasControls'
 import '@xyflow/react/dist/style.css'
 import { useEditorStore } from '@/store/editor.store'
 import { nodeService } from '@/services/node.service'
@@ -123,7 +124,12 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
   )
 
   return (
-    <div className="h-full w-full bg-[#0a0a0a]" onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
+    <div
+      className="h-full w-full"
+      style={{ background: '#06060a' }}
+      onDrop={onDrop}
+      onDragOver={(e) => e.preventDefault()}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -139,10 +145,16 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
           animated: false,
         }}
         proOptions={{ hideAttribution: true }}
+        // Empêche le scroll de la page quand la souris est sur le canvas
+        preventScrolling
+        panOnScroll={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1e1e1e" />
-        <Controls className="border-[#2a2a2a]! bg-[#111111]! shadow-none! [&>button]:border-[#2a2a2a]! [&>button]:bg-[#111111]! [&>button]:text-gray-400! [&>button:hover]:bg-[#1e1e1e]!" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="rgba(255,255,255,0.25)" />
         <MiniMap className="border-[#2a2a2a]! bg-[#0a0a0a]!" nodeColor="#1e1e1e" maskColor="rgba(0,0,0,0.5)" />
+        {/* Barre de contrôles custom — Panel React Flow pour rester dans le canvas */}
+        <Panel position="bottom-center" style={{ margin: 0, width: '100%', pointerEvents: 'none' }}>
+          <CanvasControls pipelineId={pipelineId} />
+        </Panel>
       </ReactFlow>
     </div>
   )
