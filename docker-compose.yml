@@ -1,19 +1,31 @@
-version: '3.8'
-
 services:
   backend:
-    image: ${DOCKER_IMAGE:-datapipe_backend:latest}
     build:
-      context: .
+      context: ./datapipe_backend
     container_name: datapipe_backend
     restart: always
     ports:
-      - "5005:5000"
-    volumes:
-      - datapipe_data:/app/instance
-      - datapipe_uploads:/app/uploads
+      - "5000:5000"          # le frontend appelle l'API sur <hôte>:5000
     env_file:
-      - .env
+      - ./datapipe_backend/.env
+    volumes:
+      - datapipe_data:/app/instance       # base SQLite persistante
+      - datapipe_uploads:/app/uploads     # fichiers uploadés persistants
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/api/v1/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./datapipe-app
+    container_name: datapipe_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   datapipe_data:

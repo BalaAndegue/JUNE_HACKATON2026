@@ -1,8 +1,9 @@
-name: CI/CD Pipeline
+name: CI/CD — DataPipe
 
 on:
   push:
-    branches: ["BACKEND"]
+    branches: ["Blhack_full", "main"]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -12,21 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
           cache: "pip"
-
-      - name: Install dependencies
+      - name: Install & test backend
         run: |
+          cd datapipe_backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Run tests with pytest
-        run: |
-          pytest
+          pytest -q
 
   build:
     needs: test
@@ -34,148 +30,44 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      image_name: ${{ steps.lower.outputs.image }} # On exporte le nom en minuscule
     steps:
       - uses: actions/checkout@v4
-
-      # ÉTAPE CRUCIALE : On met le nom en minuscules ici
-      - name: Lowercase image name
-        id: lower
-        run: echo "image=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
+      - name: Lowercase repo name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ steps.lower.outputs.image }}
-          tags: |
-            type=raw,value=latest
-            type=sha
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
+          context: ./datapipe_backend
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ steps.repo.outputs.name }}-backend:latest
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          script: |
-            # On définit le nom de l'image en minuscules pour le VPS aussi
-            IMAGE_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
-            
-            # 1. Configuration de Docker (daemon.json) pour optimiser les téléchargements et l'MTU
-            echo "Configuration de Docker pour éviter les blocages de téléchargement..."
-            sudo mkdir -p /etc/docker || mkdir -p /etc/docker
-            
-            # Configuration de Docker avec script Python (utilisant textwrap.dedent pour conserver l'indentation YAML correcte)
-            sudo python3 -c 'import textwrap; exec(textwrap.dedent("""
-                import json, os, subprocess
-                path = "/etc/docker/daemon.json"
-                data = {}
-                if os.path.exists(path):
-                    try:
-                        with open(path, "r") as f:
-                            data = json.load(f)
-                    except Exception:
-                        pass
-                data["max-concurrent-downloads"] = 1
-                try:
-                    route_out = subprocess.check_output("ip route show", shell=True).decode()
-                    default_interface = None
-                    for line in route_out.splitlines():
-                        if "default" in line:
-                            parts = line.split()
-                            if "dev" in parts:
-                                default_interface = parts[parts.index("dev") + 1]
-                                break
-                    if default_interface:
-                        link_out = subprocess.check_output(f"ip link show {default_interface}", shell=True).decode()
-                        parts = link_out.split()
-                        if "mtu" in parts:
-                            mtu_val = int(parts[parts.index("mtu") + 1])
-                            if mtu_val < 1500:
-                                data["mtu"] = mtu_val
-                                print("MTU configure a", mtu_val)
-                except Exception as e:
-                    print("Erreur detection MTU:", e)
-                with open(path, "w") as f:
-                    json.dump(data, f, indent=2)
-            """))' || echo '{"max-concurrent-downloads": 1}' | sudo tee /etc/docker/daemon.json || echo '{"max-concurrent-downloads": 1}' > /etc/docker/daemon.json
+          context: ./datapipe-app
+          push: true
+          tags: ghcr.io/${{ steps.repo.outputs.name }}-frontend:latest
 
-            # 2. Redémarrage de Docker pour appliquer la configuration
-            echo "Redémarrage du service Docker..."
-            sudo systemctl restart docker || systemctl restart docker
-            sleep 5
-
-            # 3. Vérification de la réactivité de Docker
-            echo "Vérification de l'état du service Docker..."
-            if ! timeout 15 docker ps > /dev/null; then
-              echo "Docker ne répond toujours pas après configuration !"
-            fi
-
-            # 4. Affichage des ressources système
-            echo "Espace disque disponible :"
-            df -h
-            echo "Mémoire RAM disponible :"
-            free -m
-
-            # S'assurer que le dossier existe
-            mkdir -p ~/JUNE_HACKATON2026
-            cd ~/JUNE_HACKATON2026
-            
-            # Écrire directement le fichier docker-compose.yml sur le VPS
-            echo 'version: "3.8"
-            
-            services:
-              backend:
-                image: ${DOCKER_IMAGE}
-                container_name: datapipe_backend
-                restart: always
-                ports:
-                  - "5005:5000"
-                volumes:
-                  - datapipe_data:/app/instance
-                  - datapipe_uploads:/app/uploads
-                env_file:
-                  - .env
-            
-            volumes:
-              datapipe_data:
-              datapipe_uploads:' > docker-compose.yml
-            
-            # Connexion au registre sur le VPS pour avoir le droit de pull
-            echo "Connexion au registre GHCR..."
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # On passe la variable DOCKER_IMAGE directement à docker compose
-            echo "Téléchargement de la nouvelle image..."
-            DOCKER_IMAGE=${{ env.REGISTRY }}/$IMAGE_LOWER:latest docker compose pull
-            
-            echo "Démarrage de l'application..."
-            DOCKER_IMAGE=${{ env.REGISTRY }}/$IMAGE_LOWER:latest docker compose up -d
-            
-            echo "Nettoyage final des images inutilisées..."
-            docker image prune -f
-            
-            echo "Déploiement terminé !"
+  # ── Déploiement VPS (optionnel) — nécessite les secrets VPS_HOST / VPS_USER / VPS_SSH_KEY ──
+  # deploy:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy over SSH
+  #       uses: appleboy/ssh-action@v1
+  #       with:
+  #         host: ${{ secrets.VPS_HOST }}
+  #         username: ${{ secrets.VPS_USER }}
+  #         key: ${{ secrets.VPS_SSH_KEY }}
+  #         script: |
+  #           cd ~/JUNE_HACKATON2026
+  #           git pull
+  #           docker compose pull
+  #           docker compose up -d
