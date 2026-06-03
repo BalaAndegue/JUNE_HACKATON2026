@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { addEdge } from '@xyflow/react'
+import api from '@/lib/axios'
 import { X, Send, Sparkles, Loader2, Zap, ShieldCheck, AlertTriangle, Check, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,10 +22,19 @@ interface AIChatPanelProps {
 }
 
 export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
+  const router = useRouter()
   const {
-    setAIChatOpen, setNodes, setEdges, nodes,
+    setAIChatOpen, setNodes, setEdges, nodes, edges, setSelectedNode,
     setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage, activeRunId,
   } = useEditorStore()
+
+  // Resolve a node by id or by (fuzzy) label — used by connect/configure/delete.
+  const findNode = (ref: unknown) => {
+    const s = String(ref || '').toLowerCase().trim()
+    if (!s) return undefined
+    return nodes.find((n) => n.id === ref)
+      || nodes.find((n) => String((n.data as { label?: string })?.label || '').toLowerCase().includes(s))
+  }
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -153,6 +165,35 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
         const report = await runService.getAuditReport(activeRunId)
         download(JSON.stringify(report, null, 2), `rapport_audit.json`, 'application/json')
         toast.success("Rapport d'audit exporté"); break
+      }
+      case 'create_pipeline': {
+        const orgs = (await api.get('/api/v1/orgs')).data.orgs
+        const ws = (await api.get(`/api/v1/orgs/${orgs[0].id}/workspaces`)).data.workspaces[0].id
+        const pip = await pipelineService.create({ name: String(p.name || 'Nouveau pipeline'), workspace_id: ws })
+        toast.success('Pipeline créé')
+        router.push(`/dashboard/pipelines/${pip.id}/editor`)
+        break
+      }
+      case 'connect_nodes': {
+        const src = findNode(p.source); const tgt = findNode(p.target)
+        if (!src || !tgt) { toast.error('Nœud source ou cible introuvable'); return }
+        const edge = await nodeService.createEdge(pipelineId, { source: src.id, target: tgt.id })
+        setEdges(addEdge({ id: edge.id, source: src.id, target: tgt.id }, edges))
+        toast.success('Nœuds connectés'); break
+      }
+      case 'delete_node': {
+        const n = findNode(p.node)
+        if (!n) { toast.error('Nœud introuvable'); return }
+        await nodeService.deleteNode(pipelineId, n.id)
+        setNodes(nodes.filter((x) => x.id !== n.id))
+        setEdges(edges.filter((e) => e.source !== n.id && e.target !== n.id))
+        toast.success('Nœud supprimé'); break
+      }
+      case 'configure_node': {
+        const n = findNode(p.node)
+        if (!n) { toast.error('Nœud introuvable'); return }
+        setSelectedNode(n.id)   // ouvre l'inspecteur pour ajuster la config
+        toast.info('Configure le nœud dans le panneau de droite'); break
       }
       default:
         toast.info('Action proposée — à finaliser sur le canvas.')

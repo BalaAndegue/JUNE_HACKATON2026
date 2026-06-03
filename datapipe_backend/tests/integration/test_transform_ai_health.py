@@ -649,3 +649,13 @@ class TestAgentPlan:
         d = self._plan(client, auth_headers, "bonjour, tu vas bien ?").get_json()
         assert d['type'] == 'reply'
         assert d['message']
+
+    def test_delete_intent(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "supprime le nœud Filtre").get_json()
+        assert d['action'] == 'delete_node'
+        assert d['warning']
+
+    def test_connect_intent(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "connecte Source CSV à Masquage").get_json()
+        assert d['action'] == 'connect_nodes'
+        assert d['params']['source'] and d['params']['target']

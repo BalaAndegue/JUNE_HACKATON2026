@@ -453,6 +453,27 @@ def _plan_heuristic(message):
         return {'type': 'action', 'action': 'export_pipeline', 'params': {'format': fmt},
                 'message': f"Je vais exporter le pipeline en {fmt.upper()} déployable."}
 
+    # Supprimer un nœud (avant la détection d'ajout)
+    md = re.search(r'(?:supprime|efface|retire|enlève)\s+(?:le\s+|la\s+|un\s+)?(?:n[oœ]ud\s+)?["\']?([\w \-éèàç]{2,40})', m)
+    if md:
+        target = md.group(1).strip()
+        return {'type': 'action', 'action': 'delete_node', 'params': {'node': target},
+                'message': f"Je vais supprimer le nœud « {target} » (et ses connexions)."}
+
+    # Connecter deux nœuds
+    mc = re.search(r'(?:connecte|relie|lie|branche)\s+(.+?)\s+(?:à|a|vers|->|et)\s+(.+)', m)
+    if mc:
+        src, tgt = mc.group(1).strip(), mc.group(2).strip()
+        return {'type': 'action', 'action': 'connect_nodes', 'params': {'source': src, 'target': tgt},
+                'message': f"Je vais connecter « {src} » → « {tgt} »."}
+
+    # Configurer un nœud
+    mcfg = re.search(r'(?:configure|règle|paramètre|change)\s+(?:le\s+|la\s+)?(?:n[oœ]ud\s+)?([\w \-éèàç]{2,30})', m)
+    if mcfg and any(k in m for k in ['configure', 'règle', 'paramètre']):
+        return {'type': 'action', 'action': 'configure_node',
+                'params': {'node': mcfg.group(1).strip(), 'hint': message},
+                'message': f"Je vais ouvrir la configuration du nœud « {mcfg.group(1).strip()} »."}
+
     if any(k in m for k in ['sql', 'requête', 'transforme', 'transformation']):
         return {'type': 'action', 'action': 'generate_sql', 'params': {'description': message},
                 'message': "Je vais générer une transformation SQL, la tester sur un échantillon, puis tu valideras."}
