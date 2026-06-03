@@ -68,9 +68,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd ${{ secrets.VPS_PATH || '~/JUNE_HACKATON2026' }}
+            cd ${{ secrets.VPS_PATH || '~/datapipe' }}
             git fetch origin
             git checkout ${{ github.ref_name }}
             git pull origin ${{ github.ref_name }}
-            docker compose up -d --build
+            # Stack PROD complète (backend + frontend + nginx HTTPS). Le certificat TLS
+            # est déjà présent (obtenu une fois via nginx/init-letsencrypt.sh).
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
             docker image prune -f
