@@ -134,18 +134,7 @@ jobs:
               echo "Docker ne répond toujours pas après configuration !"
             fi
 
-            # 4. Nettoyage de l'espace disque et des conteneurs obsolètes
-            echo "Arrêt et suppression de l'ancien conteneur si existant..."
-            docker stop datapipe_backend || true
-            docker rm datapipe_backend || true
-            
-            echo "Nettoyage des conteneurs arrêtés et des réseaux inutilisés..."
-            docker system prune -f
-            
-            echo "Nettoyage des images Docker inutilisées pour libérer de l'espace..."
-            docker image prune -a -f
-            
-            # 5. Affichage des ressources système
+            # 4. Affichage des ressources système
             echo "Espace disque disponible :"
             df -h
             echo "Mémoire RAM disponible :"
