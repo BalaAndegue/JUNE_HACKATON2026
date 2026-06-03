@@ -23,7 +23,7 @@ export const FilterNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Non configuré</span>
+        <span className="text-gray-600 italic">Non configuré</span>
       )}
     </BaseNode>
   )
@@ -47,7 +47,7 @@ export const JoinNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Non configuré</span>
+        <span className="text-gray-600 italic">Non configuré</span>
       )}
     </BaseNode>
   )
@@ -67,7 +67,7 @@ export const AggregateNode = memo((props: NodeProps) => {
             GROUP BY {cfg.group_by.slice(0, 2).join(', ')}{cfg.group_by.length > 2 ? '…' : ''}
           </span>
           {cfg.aggregations?.length ? (
-            <span className="text-slate-500 text-[10px]">
+            <span className="text-gray-600 text-[10px]">
               {cfg.aggregations.slice(0, 2).map(a => `${a.function}(${a.column})`).join(', ')}
             </span>
           ) : null}
@@ -76,7 +76,7 @@ export const AggregateNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Non configuré</span>
+        <span className="text-gray-600 italic">Non configuré</span>
       )}
     </BaseNode>
   )
@@ -99,7 +99,7 @@ export const RenameNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Aucune opération</span>
+        <span className="text-gray-600 italic">Aucune opération</span>
       )}
     </BaseNode>
   )
@@ -127,7 +127,7 @@ export const CleanNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Non configuré</span>
+        <span className="text-gray-600 italic">Non configuré</span>
       )}
     </BaseNode>
   )

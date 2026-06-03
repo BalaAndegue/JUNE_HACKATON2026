@@ -39,7 +39,7 @@ export function InspectorChart({ config, columns, onChange }: Props) {
               className={`rounded-lg border px-2.5 py-2 text-left text-xs transition-colors ${
                 config.chart_type === ct.value
                   ? 'border-[#ff6d35] bg-[#ff6d35]/10 text-[#ff6d35]'
-                  : 'border-[#d7dbe2] text-slate-500 hover:border-[#c3c9d2] hover:text-slate-700'
+                  : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'
               }`}
             >
               <p className="font-medium">{ct.label}</p>
@@ -80,7 +80,7 @@ export function InspectorChart({ config, columns, onChange }: Props) {
 
       {/* Title */}
       <div className="space-y-1.5">
-        <Label>Titre <span className="text-slate-500">(optionnel)</span></Label>
+        <Label>Titre <span className="text-gray-600">(optionnel)</span></Label>
         <Input
           placeholder="Mon graphique"
           value={config.title ?? ''}
@@ -95,7 +95,7 @@ export function InspectorChart({ config, columns, onChange }: Props) {
           {COLORS.map(c => (
             <button
               key={c}
-              className={`h-7 w-7 rounded-full transition-all ${config.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[#eaedf2]' : ''}`}
+              className={`h-7 w-7 rounded-full transition-all ${config.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a]' : ''}`}
               style={{ background: c }}
               onClick={() => update({ color: c })}
             />

@@ -27,8 +27,8 @@ function CtrlBtn({
     <button
       onClick={onClick}
       title={title}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-900/[0.06] hover:text-slate-800 active:scale-95"
-      style={{ border: '1px solid rgba(15,23,42,0.10)', background: 'rgba(15,23,42,0.05)' }}
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-white/8 hover:text-gray-200 active:scale-95"
+      style={{ border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.05)' }}
     >
       {children}
     </button>

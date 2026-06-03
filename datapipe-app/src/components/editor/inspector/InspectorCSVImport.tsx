@@ -31,7 +31,7 @@ export function InspectorCSVImport({ config, files, onChange }: Props) {
           </SelectTrigger>
           <SelectContent>
             {files.length === 0 && (
-              <div className="px-3 py-2 text-xs text-slate-500">
+              <div className="px-3 py-2 text-xs text-gray-600">
                 Aucun fichier CSV uploadé
               </div>
             )}
@@ -40,7 +40,7 @@ export function InspectorCSVImport({ config, files, onChange }: Props) {
                 <div className="flex items-center gap-2">
                   <FileText className="h-3.5 w-3.5 text-emerald-400" />
                   <span>{f.name}</span>
-                  {f.rows && <span className="text-slate-500 text-xs">({f.rows} lignes)</span>}
+                  {f.rows && <span className="text-gray-600 text-xs">({f.rows} lignes)</span>}
                 </div>
               </SelectItem>
             ))}
@@ -52,7 +52,7 @@ export function InspectorCSVImport({ config, files, onChange }: Props) {
       {selectedFile && (
         <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 space-y-1">
           <p className="text-xs text-emerald-400 font-medium">{selectedFile.name}</p>
-          <div className="flex gap-3 text-[10px] text-slate-500">
+          <div className="flex gap-3 text-[10px] text-gray-600">
             {selectedFile.rows && <span>{selectedFile.rows} lignes</span>}
             {selectedFile.columns && <span>{selectedFile.columns} colonnes</span>}
           </div>
@@ -92,7 +92,7 @@ export function InspectorCSVImport({ config, files, onChange }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <Label>Ligne d'en-tête</Label>
-          <p className="text-[10px] text-slate-500">La 1ère ligne contient les noms de colonnes</p>
+          <p className="text-[10px] text-gray-600">La 1ère ligne contient les noms de colonnes</p>
         </div>
         <Switch
           checked={config.has_header !== false}

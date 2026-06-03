@@ -26,7 +26,7 @@ export function InspectorExport({ config, onChange }: Props) {
               className={`rounded-lg border py-3 text-center font-mono text-sm font-bold uppercase transition-colors ${
                 config.format === fmt
                   ? 'border-[#ff6d35] bg-[#ff6d35]/10 text-[#ff6d35]'
-                  : 'border-[#d7dbe2] text-slate-500 hover:border-[#c3c9d2] hover:text-slate-700'
+                  : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'
               }`}
             >
               {fmt}
@@ -37,14 +37,14 @@ export function InspectorExport({ config, onChange }: Props) {
 
       {/* Filename */}
       <div className="space-y-1.5">
-        <Label>Nom du fichier <span className="text-slate-500">(optionnel)</span></Label>
+        <Label>Nom du fichier <span className="text-gray-600">(optionnel)</span></Label>
         <div className="flex items-center gap-1">
           <Input
             placeholder="export"
             value={config.filename ?? ''}
             onChange={(e) => update({ filename: e.target.value || undefined })}
           />
-          <span className="text-xs text-slate-500 shrink-0">.{config.format ?? 'csv'}</span>
+          <span className="text-xs text-gray-600 shrink-0">.{config.format ?? 'csv'}</span>
         </div>
       </div>
 
@@ -53,7 +53,7 @@ export function InspectorExport({ config, onChange }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <Label>Inclure l'index</Label>
-            <p className="text-[10px] text-slate-500">Ajoute une colonne numéro de ligne</p>
+            <p className="text-[10px] text-gray-600">Ajoute une colonne numéro de ligne</p>
           </div>
           <Switch
             checked={config.include_index ?? false}

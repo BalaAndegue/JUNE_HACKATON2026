@@ -124,8 +124,8 @@ export default function PipelinesPage() {
     <div className="p-6 space-y-5 max-w-6xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Pipelines</h1>
-          <p className="text-sm text-slate-500">{pipelines.length} pipeline{pipelines.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl font-bold text-white">Pipelines</h1>
+          <p className="text-sm text-gray-500">{pipelines.length} pipeline{pipelines.length > 1 ? 's' : ''}</p>
         </div>
         <Button onClick={() => setShowCreate(true)} className="gap-2">
           <Plus className="h-4 w-4" /> Nouveau pipeline
@@ -133,7 +133,7 @@ export default function PipelinesPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
         <Input
           className="pl-9"
           placeholder="Rechercher un pipeline…"
@@ -147,11 +147,11 @@ export default function PipelinesPage() {
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-36" />)}
         </div>
       ) : pipelines.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#d7dbe2] py-16 gap-4">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#2a2a2a] py-16 gap-4">
           <GitBranch className="h-12 w-12 text-gray-700" />
           <div className="text-center">
-            <p className="text-slate-600 font-medium">Aucun pipeline</p>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-gray-400 font-medium">Aucun pipeline</p>
+            <p className="text-sm text-gray-500 mt-1">
               {isDemoMode ? 'Connectez une API pour voir vos pipelines' : 'Créez votre premier pipeline pour commencer'}
             </p>
           </div>
@@ -164,7 +164,7 @@ export default function PipelinesPage() {
           {pipelines.map((p) => (
             <Card
               key={p.id}
-              className="group relative cursor-pointer transition-all hover:border-[#d7dbe2] hover:shadow-lg hover:shadow-black/20"
+              className="group relative cursor-pointer transition-all hover:border-[#2a2a2a] hover:shadow-lg hover:shadow-black/20"
               onClick={() => router.push(`/dashboard/pipelines/${p.id}/editor`)}
             >
               <div className="p-4 space-y-3">
@@ -174,8 +174,8 @@ export default function PipelinesPage() {
                       <Zap className="h-4 w-4 text-[#ff6d35]" />
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-800 group-hover:text-slate-900 transition-colors">{p.name}</p>
-                      <p className="text-xs text-slate-500">{p.nodes_count ?? 0} nœuds</p>
+                      <p className="font-semibold text-gray-200 group-hover:text-white transition-colors">{p.name}</p>
+                      <p className="text-xs text-gray-500">{p.nodes_count ?? 0} nœuds</p>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -200,10 +200,10 @@ export default function PipelinesPage() {
                 </div>
 
                 {p.description && (
-                  <p className="text-xs text-slate-500 line-clamp-2">{p.description}</p>
+                  <p className="text-xs text-gray-500 line-clamp-2">{p.description}</p>
                 )}
 
-                <div className="flex items-center justify-between pt-1 border-t border-[#e6e8ec]">
+                <div className="flex items-center justify-between pt-1 border-t border-[#1e1e1e]">
                   <Badge variant={statusVariant(p.last_run_status)} className="text-[10px] h-5">
                     {p.last_run_status ?? 'jamais exécuté'}
                   </Badge>

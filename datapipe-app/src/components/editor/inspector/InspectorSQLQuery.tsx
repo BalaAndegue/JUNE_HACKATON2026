@@ -52,7 +52,7 @@ export function InspectorSQLQuery({ config, onChange }: Props) {
           onChange={(e) => update({ query: e.target.value })}
           spellCheck={false}
         />
-        <p className="text-[10px] text-slate-500">
+        <p className="text-[10px] text-gray-600">
           Astuce : utilisez LIMIT pour éviter de charger trop de données
         </p>
       </div>

@@ -139,7 +139,7 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
   return (
     <div
       className="h-full w-full"
-      style={{ background: '#eaedf2' }}
+      style={{ background: '#0a0a0a' }}
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
     >
@@ -154,7 +154,7 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
         fitView
         fitViewOptions={{ padding: 0.3 }}
         defaultEdgeOptions={{
-          style: { stroke: '#c2c9d4', strokeWidth: 2 },
+          style: { stroke: '#2a2a2a', strokeWidth: 2 },
           animated: true,
         }}
         proOptions={{ hideAttribution: true }}
@@ -162,8 +162,8 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
         preventScrolling
         panOnScroll={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#cbd2dc" />
-        <MiniMap className="border-[#d7dbe2]! bg-white!" nodeColor="#cbd2dc" maskColor="rgba(15,23,42,0.06)" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#2a2a2a" />
+        <MiniMap className="border-[#2a2a2a]! bg-[#141414]!" nodeColor="#2a2a2a" maskColor="rgba(255,255,255,0.06)" />
         {/* Barre de contrôles custom — Panel React Flow pour rester dans le canvas */}
         <Panel position="bottom-center" style={{ margin: 0, width: '100%', pointerEvents: 'none' }}>
           <CanvasControls pipelineId={pipelineId} />

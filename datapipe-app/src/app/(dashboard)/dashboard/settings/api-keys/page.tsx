@@ -65,7 +65,7 @@ export default function ApiKeysPage() {
   return (
     <div className="p-6 space-y-5 max-w-3xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900">Clés API</h1>
+        <h1 className="text-xl font-bold text-gray-100">Clés API</h1>
         <Button onClick={() => setShowCreate(true)} className="gap-2">
           <Plus className="h-4 w-4" /> Nouvelle clé
         </Button>
@@ -74,7 +74,7 @@ export default function ApiKeysPage() {
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>
       ) : keys.length === 0 ? (
-        <div className="text-center py-10 text-slate-500 text-sm">
+        <div className="text-center py-10 text-gray-600 text-sm">
           {isDemoMode ? 'Connectez une API pour gérer les clés' : 'Aucune clé API créée'}
         </div>
       ) : (
@@ -86,8 +86,8 @@ export default function ApiKeysPage() {
                   <Key className="h-4 w-4 text-[#ff6d35]" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{key.name}</p>
-                  <p className="text-xs text-slate-500 font-mono">{key.prefix}…</p>
+                  <p className="text-sm font-medium text-gray-200">{key.name}</p>
+                  <p className="text-xs text-gray-600 font-mono">{key.prefix}…</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export default function ApiKeysPage() {
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 space-y-2">
                 <p className="text-xs text-amber-400 font-semibold">Copiez cette clé maintenant — elle ne sera plus affichée</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded bg-[#eaedf2] px-3 py-2 text-xs text-emerald-400 font-mono break-all">{newKey}</code>
+                  <code className="flex-1 rounded bg-[#0a0a0a] px-3 py-2 text-xs text-emerald-400 font-mono break-all">{newKey}</code>
                   <Button size="icon-sm" variant="outline" onClick={() => { navigator.clipboard.writeText(newKey); toast.success('Copié !') }}>
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
@@ -136,7 +136,7 @@ export default function ApiKeysPage() {
                       <button
                         key={s}
                         onClick={() => toggleScope(s)}
-                        className={`rounded-full px-3 py-1 text-xs border transition-colors ${form.scopes.includes(s) ? 'border-[#ff6d35] bg-[#ff6d35]/15 text-[#ff6d35]' : 'border-[#d7dbe2] text-slate-500 hover:border-[#c3c9d2]'}`}
+                        className={`rounded-full px-3 py-1 text-xs border transition-colors ${form.scopes.includes(s) ? 'border-[#ff6d35] bg-[#ff6d35]/15 text-[#ff6d35]' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a]'}`}
                       >
                         {s}
                       </button>

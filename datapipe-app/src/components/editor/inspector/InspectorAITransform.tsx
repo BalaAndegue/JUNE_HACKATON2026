@@ -75,7 +75,7 @@ export function InspectorAITransform({ config, onChange, onGenerateCode }: Props
           {PROMPT_EXAMPLES.map((ex, i) => (
             <button
               key={i}
-              className="w-full text-left rounded-md px-2.5 py-1.5 text-[11px] text-slate-500 hover:bg-[#ffffff] hover:text-slate-700 transition-colors"
+              className="w-full text-left rounded-md px-2.5 py-1.5 text-[11px] text-gray-500 hover:bg-[#141414] hover:text-gray-300 transition-colors"
               onClick={() => update({ prompt: ex })}
             >
               {ex}
@@ -114,7 +114,7 @@ export function InspectorAITransform({ config, onChange, onGenerateCode }: Props
               <Copy className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <pre className="rounded-lg bg-[#eaedf2] border border-[#d7dbe2] p-3 text-[10px] text-emerald-400 font-mono overflow-auto max-h-48 whitespace-pre-wrap">
+          <pre className="rounded-lg bg-[#0f0f0f] border border-[#2a2a2a] p-3 text-[10px] text-emerald-400 font-mono overflow-auto max-h-48 whitespace-pre-wrap">
             {config.generated_code}
           </pre>
         </div>

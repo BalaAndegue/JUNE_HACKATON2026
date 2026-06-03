@@ -46,8 +46,8 @@ export function InspectorJoin({ config, leftColumns, rightColumns, onChange }: P
         </Select>
       </div>
 
-      <div className="rounded-lg border border-[#e6e8ec] bg-[#eaedf2] p-3 space-y-3">
-        <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Clés de jointure</p>
+      <div className="rounded-lg border border-[#1e1e1e] bg-[#0f0f0f] p-3 space-y-3">
+        <p className="text-[10px] text-gray-600 font-semibold uppercase tracking-wide">Clés de jointure</p>
         <ColPicker
           label="Clé gauche (flux du haut)"
           value={config.left_key}

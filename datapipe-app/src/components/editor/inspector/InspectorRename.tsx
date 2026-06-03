@@ -52,7 +52,7 @@ export function InspectorRename({ config, columns, onChange }: Props) {
           ) : (
             <Input className="flex-1" placeholder="ancienne_col" value={fromCol} onChange={(e) => setFromCol(e.target.value)} />
           )}
-          <ArrowRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+          <ArrowRight className="h-3.5 w-3.5 text-gray-600 shrink-0" />
           <Input className="flex-1" placeholder="nouvelle_col" value={toCol} onChange={(e) => setToCol(e.target.value)} />
           <Button size="icon-sm" variant="outline" onClick={addRename}><Plus className="h-3.5 w-3.5" /></Button>
         </div>
@@ -83,7 +83,7 @@ export function InspectorRename({ config, columns, onChange }: Props) {
           <p className="text-[10px] text-gray-700">Aucune opération définie</p>
         ) : (
           ops.map((op, i) => (
-            <div key={i} className="flex items-center justify-between rounded bg-[#ffffff] px-2.5 py-1.5">
+            <div key={i} className="flex items-center justify-between rounded bg-[#141414] px-2.5 py-1.5">
               {'from' in op ? (
                 <span className="font-mono text-[10px] text-blue-400">
                   rename: {op.from} → {op.to}
@@ -91,9 +91,9 @@ export function InspectorRename({ config, columns, onChange }: Props) {
               ) : 'column' in op ? (
                 <span className="font-mono text-[10px] text-red-400">drop: {op.column}</span>
               ) : (
-                <span className="font-mono text-[10px] text-slate-600">select</span>
+                <span className="font-mono text-[10px] text-gray-400">select</span>
               )}
-              <button onClick={() => remove(i)}><X className="h-3 w-3 text-slate-500 hover:text-red-400" /></button>
+              <button onClick={() => remove(i)}><X className="h-3 w-3 text-gray-600 hover:text-red-400" /></button>
             </div>
           ))
         )}

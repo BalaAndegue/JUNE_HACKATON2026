@@ -18,7 +18,7 @@ interface RunConsoleProps {
 }
 
 const LOG_COLORS: Record<string, string> = {
-  INFO: 'text-slate-600',
+  INFO: 'text-gray-400',
   WARNING: 'text-amber-400',
   ERROR: 'text-red-400',
 }
@@ -51,11 +51,11 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
 
   return (
     <div
-      className="flex flex-col border-t border-[#e6e8ec] bg-[#eaedf2]"
+      className="flex flex-col border-t border-[#1e1e1e] bg-[#0a0a0a]"
       style={{ height }}
     >
       {/* Console header */}
-      <div className="flex items-center justify-between border-b border-[#e6e8ec] px-4 py-1.5">
+      <div className="flex items-center justify-between border-b border-[#1e1e1e] px-4 py-1.5">
         <div className="flex items-center gap-3">
           <Tabs value={consoleTab} onValueChange={(v) => setConsoleTab(v as typeof consoleTab)}>
             <TabsList className="h-7 gap-0.5">
@@ -80,7 +80,7 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
           </Tabs>
 
           {activeRunId && (
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
               <span className={cn(
                 'h-1.5 w-1.5 rounded-full',
                 runStatus === 'running' ? 'bg-blue-400 animate-pulse' :
@@ -117,15 +117,15 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
               </p>
             )}
             {logs.map((log, i) => (
-              <div key={i} className="flex gap-3 py-0.5 border-b border-[#e6e8ec]">
+              <div key={i} className="flex gap-3 py-0.5 border-b border-[#1e1e1e]">
                 <span className="text-gray-700 shrink-0">{log.ts}</span>
-                <span className={cn('shrink-0 w-14', LOG_COLORS[log.level] ?? 'text-slate-500')}>
+                <span className={cn('shrink-0 w-14', LOG_COLORS[log.level] ?? 'text-gray-500')}>
                   {log.level}
                 </span>
                 {log.node_id && (
-                  <span className="text-slate-500 shrink-0 truncate max-w-[80px]">{log.node_id}</span>
+                  <span className="text-gray-500 shrink-0 truncate max-w-[80px]">{log.node_id}</span>
                 )}
-                <span className="text-slate-700 break-all">{log.msg}</span>
+                <span className="text-gray-300 break-all">{log.msg}</span>
               </div>
             ))}
             <div ref={logsEndRef} />
@@ -133,7 +133,7 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
         )}
 
         {consoleTab === 'data' && (
-          <div className="p-4 text-xs text-slate-500">
+          <div className="p-4 text-xs text-gray-500">
             {selectedNodeId
               ? <DataPreview pipelineId="" nodeId={selectedNodeId} />
               : <p className="py-4 text-center">Cliquez sur un nœud pour voir ses données</p>
@@ -142,7 +142,7 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
         )}
 
         {consoleTab === 'schema' && (
-          <div className="p-4 text-xs text-slate-500 text-center py-4">
+          <div className="p-4 text-xs text-gray-500 text-center py-4">
             Sélectionnez un nœud exécuté pour voir son schéma
           </div>
         )}
@@ -195,9 +195,9 @@ function DataPreview({ nodeId }: { pipelineId: string; nodeId: string }) {
 
       {/* Real data grid */}
       {columns.length > 0 ? (
-        <div className="overflow-auto rounded-lg border border-[#e6e8ec]">
+        <div className="overflow-auto rounded-lg border border-[#1e1e1e]">
           <table className="w-full text-left text-[11px]">
-            <thead className="bg-slate-900/5 text-slate-600">
+            <thead className="bg-white/5 text-gray-400">
               <tr>
                 {columns.map((c) => (
                   <th key={c} className="whitespace-nowrap px-2 py-1 font-medium">{c}</th>
@@ -206,9 +206,9 @@ function DataPreview({ nodeId }: { pipelineId: string; nodeId: string }) {
             </thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={i} className="border-t border-[#e6e8ec]">
+                <tr key={i} className="border-t border-[#1e1e1e]">
                   {columns.map((c) => (
-                    <td key={c} className="whitespace-nowrap px-2 py-1 text-slate-700">
+                    <td key={c} className="whitespace-nowrap px-2 py-1 text-gray-300">
                       {row[c] === null || row[c] === undefined ? '—' : String(row[c])}
                     </td>
                   ))}
@@ -218,7 +218,7 @@ function DataPreview({ nodeId }: { pipelineId: string; nodeId: string }) {
           </table>
         </div>
       ) : (
-        <p className="text-center py-4 text-slate-500">Aucune colonne en sortie</p>
+        <p className="text-center py-4 text-gray-500">Aucune colonne en sortie</p>
       )}
     </div>
   )

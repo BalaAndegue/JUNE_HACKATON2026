@@ -49,14 +49,14 @@ export default function DemoPage() {
   }, [router, setUser])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#eaedf2]">
+    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
       <div className="flex flex-col items-center gap-4">
         <Image src="/logo.png" alt="DataPipe" width={64} height={64}
                className="rounded-2xl animate-pulse" />
         {error ? (
           <p className="max-w-xs text-center text-sm text-red-500">{error}</p>
         ) : (
-          <p className="text-sm text-slate-500">Connexion au mode démo…</p>
+          <p className="text-sm text-gray-500">Connexion au mode démo…</p>
         )}
       </div>
     </div>

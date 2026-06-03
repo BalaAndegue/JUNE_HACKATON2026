@@ -16,10 +16,10 @@ export function InspectorClean({ config, onChange }: Props) {
   const Row = ({ label, desc, checked, onToggle }: {
     label: string; desc: string; checked: boolean; onToggle: (v: boolean) => void
   }) => (
-    <div className="flex items-center justify-between py-2.5 border-b border-[#f1f3f6]">
+    <div className="flex items-center justify-between py-2.5 border-b border-[#1a1a1a]">
       <div>
-        <p className="text-sm text-slate-700">{label}</p>
-        <p className="text-[10px] text-slate-500">{desc}</p>
+        <p className="text-sm text-gray-300">{label}</p>
+        <p className="text-[10px] text-gray-600">{desc}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onToggle} />
     </div>
@@ -60,7 +60,7 @@ export function InspectorClean({ config, onChange }: Props) {
           value={config.fill_null_value ?? ''}
           onChange={(e) => update({ fill_null_value: e.target.value })}
         />
-        <p className="text-[10px] text-slate-500">Vide = ne pas remplacer</p>
+        <p className="text-[10px] text-gray-600">Vide = ne pas remplacer</p>
       </div>
     </div>
   )

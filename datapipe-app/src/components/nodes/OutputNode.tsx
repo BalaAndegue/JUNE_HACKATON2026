@@ -42,13 +42,13 @@ export const ChartNode = memo((props: NodeProps) => {
           <span className="text-amber-400 text-[10px]">
             {chartLabels[cfg.chart_type]} · X={cfg.x_axis} Y={cfg.y_axis ?? '?'}
           </span>
-          {cfg.title && <span className="text-slate-500 text-[10px] italic">{cfg.title}</span>}
+          {cfg.title && <span className="text-gray-600 text-[10px] italic">{cfg.title}</span>}
           {preview?.message && (
             <span className="text-[10px] text-amber-300 block">{preview.message}</span>
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Configurez les axes</span>
+        <span className="text-gray-600 italic">Configurez les axes</span>
       )}
     </BaseNode>
   )
@@ -65,13 +65,13 @@ export const ExportNode = memo((props: NodeProps) => {
       {cfg?.format ? (
         <div className="space-y-0.5">
           <span className="text-amber-400 uppercase font-mono text-xs">{cfg.format}</span>
-          {cfg.filename && <span className="text-slate-500 text-[10px] truncate block">{cfg.filename}</span>}
+          {cfg.filename && <span className="text-gray-600 text-[10px] truncate block">{cfg.filename}</span>}
           {preview?.message && (
             <span className="text-[10px] text-amber-300 block">{preview.message}</span>
           )}
         </div>
       ) : (
-        <span className="text-slate-500 italic">Format non défini</span>
+        <span className="text-gray-600 italic">Format non défini</span>
       )}
     </BaseNode>
   )

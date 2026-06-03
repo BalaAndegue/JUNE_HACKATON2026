@@ -112,13 +112,13 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
     : null
 
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#e6e8ec] bg-[#eaedf2] px-4">
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#1e1e1e] bg-[#0a0a0a] px-4">
       {/* Left */}
       <div className="flex items-center gap-2">
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#ff6d35]/15">
           <Zap className="h-3.5 w-3.5 text-[#ff6d35]" />
         </div>
-        <span className="text-sm font-semibold text-slate-800">{pipeline?.name}</span>
+        <span className="text-sm font-semibold text-gray-200">{pipeline?.name}</span>
         {isDirty && (
           <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title="Modifications non sauvegardées" />
         )}
@@ -127,7 +127,7 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
       {/* Right */}
       <div className="flex items-center gap-1.5">
         {statusIcon && (
-          <div className="flex items-center gap-1.5 mr-1 text-xs text-slate-500">
+          <div className="flex items-center gap-1.5 mr-1 text-xs text-gray-500">
             {statusIcon}
             <span className="capitalize">{runStatus}</span>
           </div>
