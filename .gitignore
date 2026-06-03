@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Tests / coverage
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Base de données locale
+instance/*.db
+
+# Fichiers uploadés à l'exécution
+uploads/
+
+# Environnement
+.env
+*.log
+
+# IDE
+.vscode/
+.idea/
