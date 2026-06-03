@@ -27,7 +27,7 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
   const [isSaving, setIsSaving] = useState(false)
   const {
     pipeline, nodes, edges, isDirty, isRunning, runStatus,
-    activeRunId, setActiveRun, setRunStatus, setNodeStatus, appendLog,
+    activeRunId, setActiveRun, setRunStatus, setNodeStatus, setNodeResults,
     resetRun, isConsoleOpen, setConsoleOpen, setAIChatOpen,
   } = useEditorStore()
 
@@ -50,40 +50,24 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
 
   const handleRun = async () => {
     try {
-      // Save first
+      // Save first so the backend runs the current graph
       if (isDirty) await handleSave()
-      const result = await runService.execute(pipelineId)
-      setActiveRun(result.run_id)
-      setRunStatus('queued')
+      setRunStatus('running')
       setConsoleOpen(true)
 
-      // Open WebSocket for real-time updates
-      const ws = new WebSocket(
-        `${(process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000')}/ws/runs/${result.run_id}`
-      )
-      ws.onmessage = (e) => {
-        try {
-          const event = JSON.parse(e.data)
-          if (event.type === 'node_status') {
-            setNodeStatus(event.node_id, event.status)
-          } else if (event.type === 'run_complete') {
-            setRunStatus(event.status)
-            ws.close()
-            toast[event.status === 'success' ? 'success' : 'error'](
-              event.status === 'success' ? 'Run terminé avec succès' : 'Run échoué'
-            )
-          }
-        } catch {}
-      }
-
-      // Also stream logs via SSE
-      runService.streamLogs(result.run_id, (log) => {
-        appendLog(log)
-        setRunStatus('running')
+      // The backend executes synchronously and returns the full node_results.
+      const result = await runService.execute(pipelineId)
+      setActiveRun(result.run_id)
+      setNodeResults(result.node_results || {})
+      Object.entries(result.node_results || {}).forEach(([nodeId, res]) => {
+        setNodeStatus(nodeId, res.status === 'error' ? 'error' : 'success')
       })
-
+      const ok = result.status === 'success'
+      setRunStatus(ok ? 'success' : 'failed')
+      toast[ok ? 'success' : 'error'](ok ? 'Run terminé avec succès' : 'Run échoué')
     } catch {
       toast.error('Erreur lors du lancement')
+      setRunStatus('failed')
     }
   }
 

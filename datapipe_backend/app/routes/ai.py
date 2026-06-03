@@ -895,10 +895,15 @@ def list_models():
 @jwt_required()
 def chat():
     user_id = get_jwt_identity()
-    data = request.get_json()
-    err = validate_required(data, ['message'])
-    if err:
-        return jsonify({'error': err}), 400
+    data = request.get_json() or {}
+
+    # Accept both the simple {message} shape and the frontend's {messages:[...]} shape.
+    message = data.get('message')
+    if not message and isinstance(data.get('messages'), list):
+        message = next((m.get('content') for m in reversed(data['messages'])
+                        if m.get('role') == 'user'), None)
+    if not message:
+        return jsonify({'error': 'message is required'}), 400
 
     session_id = data.get('session_id') or f"chat_{user_id}_{int(datetime.utcnow().timestamp())}"
     if session_id not in AI_SESSIONS:
@@ -908,7 +913,7 @@ def chat():
 Tu aides les utilisateurs à construire des pipelines, écrire des requêtes SQL, et analyser leurs données.
 Réponds en français de manière concise et pratique."""
 
-    AI_SESSIONS[session_id].append({'role': 'user', 'content': data['message']})
+    AI_SESSIONS[session_id].append({'role': 'user', 'content': message})
 
     ai_response = _call_claude(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
     
@@ -919,7 +924,7 @@ Réponds en français de manière concise et pratique."""
     used_mock = False
     if not ai_response:
         used_mock = True
-        ai_response = _get_fallback_response(data['message'])
+        ai_response = _get_fallback_response(message)
 
     AI_SESSIONS[session_id].append({'role': 'assistant', 'content': ai_response})
 
@@ -929,9 +934,10 @@ Réponds en français de manière concise et pratique."""
 
     return jsonify({
         'session_id': session_id,
-        'message': data['message'],
-        'response': ai_response,
+        'message': {'role': 'assistant', 'content': ai_response},  # frontend shape
+        'response': ai_response,  # legacy shape (kept for existing tests)
         'model': model_used,
+        'tokens_used': AI_USAGE.get('tokens_used', 0),
     })
 
 

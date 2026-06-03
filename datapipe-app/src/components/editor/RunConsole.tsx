@@ -123,16 +123,75 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
   )
 }
 
-// Inline DataPreview — loads preview for selected node's last run
+// Inline DataPreview — renders the REAL transformed rows for the selected node,
+// plus the banking insights produced by the engine (quality, masking, anomalies).
 function DataPreview({ nodeId }: { pipelineId: string; nodeId: string }) {
   const activeRunId = useEditorStore((s) => s.activeRunId)
-  if (!activeRunId) {
-    return <p className="text-center py-4">Aucun run actif</p>
+  const result = useEditorStore((s) => s.nodeResults[nodeId])
+
+  if (!activeRunId) return <p className="text-center py-4">Aucun run actif</p>
+  if (!result) return <p className="text-center py-4">Aucune donnée pour ce nœud</p>
+  if (result.status === 'error') {
+    return <p className="text-center py-4 text-red-400">Erreur : {result.error}</p>
   }
-  // In real use, call runService.getNodePreview and display table
+
+  const rows = result.output_preview ?? []
+  const columns = result.columns ?? (rows[0] ? Object.keys(rows[0]) : [])
+  const extra = result.extra ?? {}
+  const masked = (extra.masked_columns as Array<{ column: string }>) ?? []
+  const anomalies = extra.anomalies as number | undefined
+
   return (
-    <p className="text-center text-gray-600">
-      Données du nœud {nodeId} — Run #{activeRunId.slice(-6)}
-    </p>
+    <div className="space-y-3">
+      {/* Banking insight badges — real numbers from the engine */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className="text-[10px]">
+          {formatNumber(result.rows_output)} lignes
+        </Badge>
+        {result.quality && (
+          <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30">
+            Qualité {result.quality.score}%
+          </Badge>
+        )}
+        {masked.length > 0 && (
+          <Badge variant="outline" className="text-[10px] text-sky-400 border-sky-500/30">
+            🛡️ {masked.length} colonne(s) masquée(s)
+          </Badge>
+        )}
+        {anomalies !== undefined && (
+          <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30">
+            🚨 {anomalies} anomalie(s)
+          </Badge>
+        )}
+      </div>
+
+      {/* Real data grid */}
+      {columns.length > 0 ? (
+        <div className="overflow-auto rounded-lg border border-[#1e1e1e]">
+          <table className="w-full text-left text-[11px]">
+            <thead className="bg-white/5 text-gray-400">
+              <tr>
+                {columns.map((c) => (
+                  <th key={c} className="whitespace-nowrap px-2 py-1 font-medium">{c}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} className="border-t border-[#1e1e1e]">
+                  {columns.map((c) => (
+                    <td key={c} className="whitespace-nowrap px-2 py-1 text-gray-300">
+                      {row[c] === null || row[c] === undefined ? '—' : String(row[c])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-center py-4 text-gray-600">Aucune colonne en sortie</p>
+      )}
+    </div>
   )
 }

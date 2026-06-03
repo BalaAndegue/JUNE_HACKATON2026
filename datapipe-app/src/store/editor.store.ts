@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { type Node, type Edge, applyNodeChanges, applyEdgeChanges, type NodeChange, type EdgeChange } from '@xyflow/react'
-import type { Pipeline, NodeType, Run, RunStatus, LogEntry, NodeStatus } from '@/types'
+import type { Pipeline, NodeType, Run, RunStatus, LogEntry, NodeStatus, NodeResult } from '@/types'
 
 interface EditorState {
   pipeline: Pipeline | null
@@ -16,6 +16,7 @@ interface EditorState {
   activeRunId: string | null
   runStatus: RunStatus | null
   nodeStatuses: Record<string, NodeStatus>
+  nodeResults: Record<string, NodeResult>
   logs: LogEntry[]
   isRunning: boolean
 
@@ -39,6 +40,7 @@ interface EditorState {
   setActiveRun: (runId: string) => void
   setRunStatus: (status: RunStatus) => void
   setNodeStatus: (nodeId: string, status: NodeStatus) => void
+  setNodeResults: (results: Record<string, NodeResult>) => void
   appendLog: (log: LogEntry) => void
   clearLogs: () => void
   resetRun: () => void
@@ -61,6 +63,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeRunId: null,
   runStatus: null,
   nodeStatuses: {},
+  nodeResults: {},
   logs: [],
   isRunning: false,
 
@@ -93,7 +96,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   markDirty: () => set({ isDirty: true }),
   markClean: () => set({ isDirty: false }),
 
-  setActiveRun: (runId) => set({ activeRunId: runId, isRunning: true, nodeStatuses: {}, logs: [] }),
+  setActiveRun: (runId) => set({ activeRunId: runId, isRunning: true, nodeStatuses: {}, nodeResults: {}, logs: [] }),
 
   setRunStatus: (status) =>
     set({ runStatus: status, isRunning: status === 'running' || status === 'queued' }),
@@ -101,13 +104,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setNodeStatus: (nodeId, status) =>
     set((state) => ({ nodeStatuses: { ...state.nodeStatuses, [nodeId]: status } })),
 
+  setNodeResults: (results) => set({ nodeResults: results }),
+
   appendLog: (log) =>
     set((state) => ({ logs: [...state.logs.slice(-499), log] })),
 
   clearLogs: () => set({ logs: [] }),
 
   resetRun: () =>
-    set({ activeRunId: null, runStatus: null, nodeStatuses: {}, logs: [], isRunning: false }),
+    set({ activeRunId: null, runStatus: null, nodeStatuses: {}, nodeResults: {}, logs: [], isRunning: false }),
 
   setInspectorOpen: (v) => set({ isInspectorOpen: v }),
   setConsoleOpen: (v) => set({ isConsoleOpen: v }),

@@ -323,13 +323,18 @@ class Node(db.Model):
         self._pinned_data = json.dumps(v) if v is not None else None
 
     def to_dict(self):
+        label = self.label or self.type_slug
+        config = self.config
         return {
             'id': self.id,
             'pipeline_id': self.pipeline_id,
             'type': self.type_slug,
-            'label': self.label or self.type_slug,
-            'config': self.config,
+            'label': label,
+            'config': config,
             'position': {'x': self.position_x, 'y': self.position_y},
+            # React Flow shape consumed by the frontend (additive — flat keys kept).
+            'data': {'label': label, 'config': config,
+                     'type_slug': self.type_slug, 'status': 'idle'},
             'has_pinned_data': self._pinned_data is not None,
             'created_at': self.created_at.isoformat() + 'Z',
             'updated_at': self.updated_at.isoformat() + 'Z',
@@ -381,6 +386,7 @@ class NodeType(db.Model):
         return {
             'slug': self.slug,
             'name': self.name,
+            'label': self.name,  # frontend expects `label`
             'category': self.category,
             'description': self.description,
             'icon': self.icon,

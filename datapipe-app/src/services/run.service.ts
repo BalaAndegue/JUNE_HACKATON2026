@@ -1,5 +1,5 @@
 import api from '@/lib/axios'
-import type { Run, NodeRun, DataPreview, NodeStats, LogEntry, PaginatedResponse, RunStatus } from '@/types'
+import type { Run, NodeRun, DataPreview, NodeStats, LogEntry, PaginatedResponse, RunStatus, NodeResult } from '@/types'
 
 export const runService = {
   execute: async (pipelineId: string, params?: {
@@ -7,10 +7,16 @@ export const runService = {
     from_node?: string
     params?: Record<string, unknown>
   }) => {
-    const res = await api.post<{ run_id: string; status: RunStatus; pipeline_id: string; started_at: string }>(
-      `/api/v1/pipelines/${pipelineId}/execute`,
-      params ?? {}
-    )
+    // The backend runs synchronously and returns the full node_results.
+    const res = await api.post<{
+      run_id: string
+      status: RunStatus
+      pipeline_id: string
+      started_at: string
+      finished_at?: string
+      duration_ms?: number
+      node_results: Record<string, NodeResult>
+    }>(`/api/v1/pipelines/${pipelineId}/execute`, params ?? {})
     return res.data
   },
 

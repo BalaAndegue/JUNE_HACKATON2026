@@ -48,5 +48,8 @@ def create_app(testing=False):
         seed_node_types()
         seed_marketplace_nodes()
         seed_templates()
+        if not testing and os.getenv('SEED_DEMO', '1') != '0':
+            from .seed_demo import seed_demo
+            seed_demo(app.config['UPLOAD_FOLDER'])
 
     return app

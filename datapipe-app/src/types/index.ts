@@ -205,6 +205,29 @@ export interface DataPreview {
   truncated: boolean
 }
 
+// Per-node result returned synchronously by the execution engine.
+export interface QualityReport {
+  rows: number
+  columns: number
+  null_cells: number
+  null_ratio: number
+  duplicate_rows: number
+  score: number
+  columns_detail: Array<{ name: string; dtype: string; null_count: number; unique_count: number }>
+}
+
+export interface NodeResult {
+  status: NodeStatus
+  rows_processed: number
+  rows_output: number
+  duration_ms: number
+  columns?: string[]
+  output_preview?: Array<Record<string, unknown>>
+  quality?: QualityReport
+  extra?: Record<string, unknown>
+  error?: string
+}
+
 export interface NodeStats {
   rows_in: number
   rows_out: number

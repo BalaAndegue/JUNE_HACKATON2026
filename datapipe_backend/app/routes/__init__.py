@@ -13,6 +13,7 @@ from .notifications import notifications_bp
 from .analytics import analytics_bp
 from .api_keys import api_keys_bp
 from .health import health_bp
+from .compat import compat_bp
 
 
 def register_blueprints(app):
@@ -32,3 +33,4 @@ def register_blueprints(app):
     app.register_blueprint(analytics_bp,     url_prefix=f'{prefix}')
     app.register_blueprint(api_keys_bp,      url_prefix=f'{prefix}')
     app.register_blueprint(health_bp,        url_prefix=f'{prefix}')
+    app.register_blueprint(compat_bp,        url_prefix=f'{prefix}')

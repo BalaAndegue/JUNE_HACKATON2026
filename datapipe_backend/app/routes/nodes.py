@@ -47,14 +47,15 @@ def create_node(pipeline_id):
         return jsonify({'error': err}), 400
 
     pos = data.get('position', {})
+    nested = data.get('data') or {}
     node = Node(
         pipeline_id=pipeline_id,
         type_slug=data['type'],
-        label=data.get('label', data['type']),
+        label=data.get('label') or nested.get('label') or data['type'],
         position_x=pos.get('x', 0),
         position_y=pos.get('y', 0),
     )
-    node.config = data.get('config', {})
+    node.config = data.get('config') or nested.get('config') or {}
     db.session.add(node)
     pipeline.updated_at = datetime.utcnow()
     db.session.commit()
@@ -121,11 +122,12 @@ def replace_node(pipeline_id, node_id):
 
     data = request.get_json()
     pos = data.get('position', {})
-    node.type_slug = data.get('type', node.type_slug)
-    node.label = data.get('label', node.label)
+    nested = data.get('data') or {}
+    node.type_slug = data.get('type', nested.get('type_slug', node.type_slug))
+    node.label = data.get('label') or nested.get('label') or node.label
     node.position_x = pos.get('x', node.position_x)
     node.position_y = pos.get('y', node.position_y)
-    node.config = data.get('config', {})
+    node.config = data.get('config') or nested.get('config') or {}
     node.updated_at = datetime.utcnow()
     pipeline.updated_at = datetime.utcnow()
     db.session.commit()
@@ -145,10 +147,11 @@ def update_node(pipeline_id, node_id):
         return jsonify({'error': 'Node not found'}), 404
 
     data = request.get_json() or {}
-    if 'label' in data:
-        node.label = data['label']
-    if 'config' in data:
-        node.config = data['config']
+    nested = data.get('data') or {}
+    if 'label' in data or 'data.label' in data or 'label' in nested:
+        node.label = data.get('label') or data.get('data.label') or nested.get('label')
+    if 'config' in data or 'data.config' in data or 'config' in nested:
+        node.config = data.get('config') or data.get('data.config') or nested.get('config') or {}
     if 'position' in data:
         node.position_x = data['position'].get('x', node.position_x)
         node.position_y = data['position'].get('y', node.position_y)

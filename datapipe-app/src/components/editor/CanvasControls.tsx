@@ -40,43 +40,33 @@ export function CanvasControls({ pipelineId }: CanvasControlsProps) {
   const { isDemoMode } = useAuthStore()
 
   const {
-    nodes, edges, isRunning, runStatus,
-    activeRunId, setActiveRun, setRunStatus, setNodeStatus,
-    appendLog, resetRun,
+    isRunning, runStatus,
+    activeRunId, setActiveRun, setRunStatus, setNodeStatus, setNodeResults,
+    resetRun,
   } = useEditorStore()
 
   const handleRun = useCallback(async () => {
     if (isDemoMode) {
-      toast.info('Mode démo — connectez une API pour exécuter')
+      toast.info('Mode démo — connectez-vous pour exécuter sur le vrai moteur')
       return
     }
     try {
+      setRunStatus('running')
+      // Synchronous execution: the backend returns the full node_results.
       const result = await runService.execute(pipelineId)
       setActiveRun(result.run_id)
-      setRunStatus('queued')
-
-      const ws = new WebSocket(
-        `${process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000'}/ws/runs/${result.run_id}`
-      )
-      ws.onmessage = (e) => {
-        const event = JSON.parse(e.data)
-        if (event.type === 'node_status') setNodeStatus(event.node_id, event.status)
-        else if (event.type === 'run_complete') {
-          setRunStatus(event.status)
-          ws.close()
-          toast.success(event.status === 'success' ? 'Run terminé' : 'Run échoué')
-        }
-      }
-
-      runService.streamLogs(result.run_id, (log) => {
-        appendLog(log)
-        setRunStatus('running')
+      setNodeResults(result.node_results || {})
+      Object.entries(result.node_results || {}).forEach(([nodeId, res]) => {
+        setNodeStatus(nodeId, res.status === 'error' ? 'error' : 'success')
       })
+      const ok = result.status === 'success'
+      setRunStatus(ok ? 'success' : 'failed')
+      toast[ok ? 'success' : 'error'](ok ? 'Run terminé' : 'Run échoué')
     } catch {
       toast.error("Erreur lors de l'exécution")
       setRunStatus('failed')
     }
-  }, [pipelineId, isDemoMode, setActiveRun, setRunStatus, setNodeStatus, appendLog])
+  }, [pipelineId, isDemoMode, setActiveRun, setRunStatus, setNodeStatus, setNodeResults])
 
   const handleCancel = useCallback(async () => {
     if (!activeRunId) return
