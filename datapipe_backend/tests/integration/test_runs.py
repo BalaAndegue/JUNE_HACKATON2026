@@ -270,3 +270,53 @@ class TestRealExecution:
         assert run['status'] == 'success'
         totals = {r['type']: r['total'] for r in run['node_results'][n_ai]['output_preview']}
         assert totals == {'virement': 3000, 'retrait': 2000}
+
+    def test_sql_query_reads_real_sqlite_datasource(self, client, auth_headers, workspace_id, tmp_path):
+        """Le nœud sql_query lit réellement une base SQLite via une datasource."""
+        import sqlite3
+        db_path = str(tmp_path / 'banque.db')
+        con = sqlite3.connect(db_path)
+        con.execute('CREATE TABLE comptes (id INTEGER, solde REAL, agence TEXT)')
+        con.executemany('INSERT INTO comptes VALUES (?,?,?)',
+                        [(1, 1000.0, 'Abidjan'), (2, 2500.0, 'Abidjan'), (3, 700.0, 'Bouake')])
+        con.commit()
+        con.close()
+
+        ds = post_json(client, '/api/v1/datasources', {
+            'workspace_id': workspace_id, 'type': 'sqlite', 'name': 'Banque locale',
+            'config': {'path': db_path},
+        }, headers=auth_headers).get_json()
+
+        pip = post_json(client, '/api/v1/pipelines', {
+            'name': 'SQL source', 'workspace_id': workspace_id,
+        }, headers=auth_headers).get_json()
+        post_json(client, f'{PBASE}/{pip["id"]}/nodes', {
+            'type': 'sql_query', 'label': 'Lire comptes', 'position': {'x': 0, 'y': 0},
+            'config': {'datasource_id': ds['id'],
+                       'query': 'SELECT agence, SUM(solde) as total FROM comptes GROUP BY agence'},
+        }, headers=auth_headers)
+
+        run = post_json(client, f'{PBASE}/{pip["id"]}/run', {}, headers=auth_headers).get_json()
+        assert run['status'] == 'success', run
+        rows = {r['agence']: r['total'] for r in list(run['node_results'].values())[0]['output_preview']}
+        assert rows == {'Abidjan': 3500.0, 'Bouake': 700.0}
+
+    def test_http_request_node_fetches_data(self, client, auth_headers, workspace_id, monkeypatch):
+        """Le nœud http_request récupère et normalise des données JSON (réseau neutralisé)."""
+        monkeypatch.setattr('app.routes.runs._http_fetch',
+                            lambda url, method='GET', headers=None, body=None: {
+                                'data': [{'ref': 'TXN1', 'montant': 100}, {'ref': 'TXN2', 'montant': 250}]})
+
+        pip = post_json(client, '/api/v1/pipelines', {
+            'name': 'API source', 'workspace_id': workspace_id,
+        }, headers=auth_headers).get_json()
+        post_json(client, f'{PBASE}/{pip["id"]}/nodes', {
+            'type': 'http_request', 'label': 'API transactions', 'position': {'x': 0, 'y': 0},
+            'config': {'url': 'https://api.banque.ci/transactions', 'method': 'GET'},
+        }, headers=auth_headers)
+
+        run = post_json(client, f'{PBASE}/{pip["id"]}/run', {}, headers=auth_headers).get_json()
+        assert run['status'] == 'success'
+        result = list(run['node_results'].values())[0]
+        assert result['rows_output'] == 2
+        assert {r['ref'] for r in result['output_preview']} == {'TXN1', 'TXN2'}
