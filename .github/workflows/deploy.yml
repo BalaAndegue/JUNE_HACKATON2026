@@ -2,7 +2,7 @@ name: CI/CD — DataPipe
 
 on:
   push:
-    branches: ["Blhack_full", "main"]
+    branches: ["blhack", "BACKEND", "main", "Blhack_full"]
   workflow_dispatch:
 
 env:
@@ -40,14 +40,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
           context: ./datapipe_backend
           push: true
           tags: ghcr.io/${{ steps.repo.outputs.name }}-backend:latest
-
       - name: Build & push frontend
         uses: docker/build-push-action@v6
         with:
@@ -55,19 +53,24 @@ jobs:
           push: true
           tags: ghcr.io/${{ steps.repo.outputs.name }}-frontend:latest
 
-  # ── Déploiement VPS (optionnel) — nécessite les secrets VPS_HOST / VPS_USER / VPS_SSH_KEY ──
-  # deploy:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Deploy over SSH
-  #       uses: appleboy/ssh-action@v1
-  #       with:
-  #         host: ${{ secrets.VPS_HOST }}
-  #         username: ${{ secrets.VPS_USER }}
-  #         key: ${{ secrets.VPS_SSH_KEY }}
-  #         script: |
-  #           cd ~/JUNE_HACKATON2026
-  #           git pull
-  #           docker compose pull
-  #           docker compose up -d
+  # Déploiement VPS — s'active en mettant la variable de repo DEPLOY_ENABLED=true
+  # et les secrets VPS_HOST / VPS_USER / VPS_SSH_KEY (+ VPS_PATH optionnel).
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    steps:
+      - name: Deploy over SSH (git pull + docker compose up)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.VPS_PATH || '~/JUNE_HACKATON2026' }}
+            git fetch origin
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+            docker compose up -d --build
+            docker image prune -f

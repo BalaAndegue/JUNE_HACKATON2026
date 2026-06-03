@@ -1,0 +1,17 @@
+# Outils locaux
+.claude/
+.DS_Store
+
+# Python / venv
+__pycache__/
+*.pyc
+.venv/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+
+# Secrets & données
+.env
+*.local
