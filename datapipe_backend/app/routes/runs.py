@@ -7,7 +7,7 @@ import io
 import json
 
 from ..extensions import db
-from ..models import Run, RunLog, Node, Edge, Pipeline, File
+from ..models import Run, RunLog, Node, Edge, Pipeline, File, Datasource
 from ..engine import execute_pipeline, coerce_value, CycleError
 from ..utils import check_pipeline_access, paginate, run_results_path
 
@@ -69,6 +69,59 @@ def _sql_generator(instruction, columns):
     return sql
 
 
+def _datasource_query(ds_id, query, limit=None):
+    """Lit des lignes depuis une datasource SQLite réelle (pour le nœud sql_query).
+
+    Connexion en lecture seule : toute écriture (DELETE/DROP…) échoue au niveau SQLite.
+    """
+    import sqlite3
+
+    ds = Datasource.query.get(ds_id)
+    if not ds:
+        raise ValueError(f'Datasource {ds_id} introuvable')
+    if ds.type != 'sqlite':
+        raise ValueError(f"Type de datasource non supporté à l'exécution : {ds.type} "
+                         "(seul 'sqlite' est branché pour le moment)")
+    path = (ds.config or {}).get('path')
+    if not path or not os.path.exists(path):
+        raise ValueError(f'Fichier SQLite introuvable : {path}')
+    if not query or not query.strip():
+        raise ValueError('Requête SQL vide')
+
+    q = query.rstrip(';').strip()
+    if limit and 'limit' not in q.lower():
+        q = f'{q} LIMIT {int(limit)}'
+
+    con = sqlite3.connect(f'file:{path}?mode=ro', uri=True)
+    try:
+        cur = con.execute(q)
+        cols = [d[0] for d in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+    finally:
+        con.close()
+
+
+def _http_fetch(url, method='GET', headers=None, body=None):
+    """Récupère des données JSON depuis une API REST (pour le nœud http_request)."""
+    import urllib.request
+    from urllib.parse import urlparse
+
+    scheme = urlparse(url).scheme.lower()
+    if scheme not in ('http', 'https'):
+        raise ValueError(f'Schéma URL non autorisé : {scheme or "(vide)"}')
+
+    payload = json.dumps(body).encode() if body else None
+    req = urllib.request.Request(url, data=payload, method=(method or 'GET').upper())
+    req.add_header('Accept', 'application/json')
+    if payload:
+        req.add_header('Content-Type', 'application/json')
+    for k, v in (headers or {}).items():
+        req.add_header(k, str(v))
+
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read())
+
+
 def _execute_run(pipeline, run):
     """Exécute réellement le pipeline nœud par nœud via le moteur ETL."""
     run.status = 'running'
@@ -79,7 +132,9 @@ def _execute_run(pipeline, run):
 
     try:
         result = execute_pipeline(nodes, edges, file_loader=_file_loader,
-                                  sql_generator=_sql_generator)
+                                  sql_generator=_sql_generator,
+                                  datasource_query=_datasource_query,
+                                  http_fetch=_http_fetch)
     except CycleError as e:
         run.status = 'error'
         run.error_message = str(e)

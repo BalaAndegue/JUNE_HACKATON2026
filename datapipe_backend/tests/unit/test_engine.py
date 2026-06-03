@@ -211,6 +211,55 @@ class TestMerge:
         assert res['node_results']['m']['rows_output'] == 3
 
 
+class TestSqlQuery:
+    def test_reads_from_datasource(self):
+        nodes = [FakeNode('q', 'sql_query', {
+            'datasource_id': 'ds_1', 'query': 'SELECT * FROM t', 'limit': 100})]
+        captured = {}
+
+        def fake_ds_query(ds_id, query, limit):
+            captured.update(ds_id=ds_id, query=query, limit=limit)
+            return [{'id': 1}, {'id': 2}]
+
+        res = execute_pipeline(nodes, [], datasource_query=fake_ds_query)
+        assert res['status'] == 'success'
+        assert res['node_results']['q']['rows_output'] == 2
+        assert captured == {'ds_id': 'ds_1', 'query': 'SELECT * FROM t', 'limit': 100}
+
+    def test_empty_without_datasource(self):
+        nodes = [FakeNode('q', 'sql_query', {'query': 'SELECT 1'})]
+        res = execute_pipeline(nodes, [])
+        assert res['node_results']['q']['rows_output'] == 0
+
+    def test_datasource_error_fails_node(self):
+        nodes = [FakeNode('q', 'sql_query', {'datasource_id': 'ds_x', 'query': 'SELECT 1'})]
+
+        def boom(ds_id, query, limit):
+            raise ValueError('introuvable')
+
+        res = execute_pipeline(nodes, [], datasource_query=boom)
+        assert res['status'] == 'error'
+
+
+class TestHttpRequest:
+    def test_fetches_and_normalizes_list(self):
+        nodes = [FakeNode('h', 'http_request', {'url': 'https://api.test/data'})]
+        res = execute_pipeline(nodes, [],
+                               http_fetch=lambda u, m, h, b: [{'a': 1}, {'a': 2}])
+        assert res['node_results']['h']['rows_output'] == 2
+
+    def test_normalizes_wrapped_payload(self):
+        nodes = [FakeNode('h', 'http_request', {'url': 'https://api.test/data'})]
+        res = execute_pipeline(nodes, [],
+                               http_fetch=lambda u, m, h, b: {'data': [{'a': 1}], 'page': 1})
+        assert res['node_results']['h']['rows_output'] == 1
+
+    def test_empty_without_fetcher(self):
+        nodes = [FakeNode('h', 'http_request', {'url': 'https://api.test/data'})]
+        res = execute_pipeline(nodes, [])
+        assert res['node_results']['h']['rows_output'] == 0
+
+
 class TestGraph:
     def test_cycle_detected(self):
         nodes = [FakeNode('a', 'filter', {}), FakeNode('b', 'filter', {})]

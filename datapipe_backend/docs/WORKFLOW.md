@@ -147,7 +147,9 @@ Chaque nœud passe sa sortie au nœud suivant. Cas particuliers :
 |---|---|
 | `join` | reçoit **deux** entrées (gauche/droite selon l'ordre des edges) |
 | `merge` | concatène **toutes** ses entrées |
-| `sql_transform` / `sql_query` | exécute du vrai SQL via **SQLite en mémoire** sur `{input}` |
+| `sql_transform` | exécute du vrai SQL via **SQLite en mémoire** sur `{input}` |
+| `sql_query` | lit une **datasource SQLite** réelle (connexion lecture seule) ; à défaut, transforme l'entrée |
+| `http_request` | appelle une **API REST** (JSON), normalise `[...]` ou `{data:[...]}` |
 | `ai_transform` | **génère du SQL via l'IA** (instruction NL) puis l'exécute sur l'entrée |
 | `split` | duplique son entrée vers chaque sortie |
 
@@ -193,7 +195,8 @@ est supprimé avec le run.
 | Catégorie | Nœuds | Exécution réelle ? |
 |---|---|---|
 | **Input** | `csv_reader`, `json_reader` | ✅ lecture fichier disque |
-| **Input** | `sql_query`, `http_request` | ⚠️ datasource/réseau non branché → sortie vide + log |
+| **Input** | `sql_query` | ✅ lecture d'une datasource **SQLite** (lecture seule) |
+| **Input** | `http_request` | ✅ appel API REST réel (JSON, timeout 15 s) |
 | **Transform** | `filter`, `map`, `aggregate`, `join`, `sort`, `dedup`, `sql_transform`, `validate` | ✅ |
 | **AI** | `ai_transform` | ✅ génère du SQL (IA) puis l'exécute sur l'entrée |
 | **Output** | `file_export`, `sql_write`, `webhook_send`, `notification_send` | ⚠️ passe-through journalisé |
@@ -207,9 +210,11 @@ est supprimé avec le run.
 - ~~**Export limité à l'aperçu**~~ ✅ **Corrigé** : le dataset complet du nœud terminal
   est désormais persisté (`uploads/results/<run_id>.json`) et l'export/download renvoie
   toutes les lignes.
-- **Datasources externes** (`sql_query`, `http_request`) non connectées : elles
-  renvoient une sortie vide avec un log d'avertissement plutôt que des données fictives.
-  Le chemin **fichier → transforms → export** est, lui, 100 % réel.
+- **`sql_query`** : seules les datasources de type **`sqlite`** sont branchées
+  (lecture seule). Les autres types (PostgreSQL, MySQL, MongoDB…) lèvent une erreur
+  explicite tant qu'un pilote dédié n'est pas ajouté.
+- **`http_request`** : appel réel limité aux schémas `http`/`https`, réponse JSON
+  attendue, timeout 15 s. Pas de protection SSRF avancée (acceptable pour un outil local).
 - **Sorties terminales** (`sql_write`, `webhook_send`, `notification_send`) sont en
   passe-through journalisé (pas d'effet externe réel).
 

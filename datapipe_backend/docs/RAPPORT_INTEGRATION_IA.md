@@ -109,9 +109,9 @@ Des tests d'intégration robustes ont été ajoutés dans `tests/integration/tes
 
 ### Résultat de la suite de tests (`pytest`) :
 ```bash
-====================== 267 passed, 187 warnings in 13.43s ======================
+====================== 275 passed, 189 warnings in 7.81s ======================
 ```
-Les 267 tests du projet (incluant l'authentification, les workspaces, les runs, le module IA, le **moteur d'exécution ETL réel** et la **suite Fichiers/Datasources**) passent à **100% avec succès**.
+Les 275 tests du projet (incluant l'authentification, les workspaces, les runs, le module IA, le **moteur d'exécution ETL réel** et la **suite Fichiers/Datasources**) passent à **100% avec succès**.
 
 > Couverture renforcée : `app/routes/files.py` est passé de **40 % à 92 %** grâce à la
 > nouvelle suite `tests/integration/test_files.py` (upload CSV/JSON, preview, analyze,
@@ -142,11 +142,12 @@ fichiers de données.
 | Transform | `filter`, `map`, `aggregate`, `join`, `sort`, `dedup`, `sql_transform`, `validate` | ✅ |
 | Control | `merge`, `split` | ✅ |
 | AI | `ai_transform` | ✅ génère du SQL (IA) puis l'exécute sur l'entrée |
-| Input externe | `sql_query`, `http_request` | ⚠️ datasource/réseau non branché |
+| Input externe | `sql_query` | ✅ lit une datasource **SQLite** (lecture seule) |
+| Input externe | `http_request` | ✅ appel API REST réel (JSON, timeout 15 s) |
 | Output | `file_export`, `sql_write`, `webhook_send`, `notification_send` | ⚠️ passe-through journalisé |
 
-`sql_transform` / `sql_query` exécutent du vrai SQL via **SQLite en mémoire** sur la
-table `{input}` (mots-clés destructeurs bloqués).
+`sql_transform` exécute du vrai SQL via **SQLite en mémoire** sur la table `{input}`
+(mots-clés destructeurs bloqués).
 
 ### 6.2 bis. Nœud IA branché sur la génération SQL (bonus démo +3 pts)
 
@@ -160,6 +161,19 @@ Le nœud `ai_transform` n'est plus un simple passe-through. Lors de l'exécution
 Le générateur est injecté dans le moteur (`execute_pipeline(..., sql_generator=...)`),
 ce qui garde `engine.py` découplé de Flask/IA et testable hors-ligne. Si l'IA est
 indisponible, le nœud se rabat proprement sur un passe-through (le run ne plante jamais).
+
+### 6.2 ter. Sources de données externes branchées (`sql_query`, `http_request`)
+
+Sur le même principe d'injection de dépendances :
+- **`sql_query`** lit une **datasource SQLite réelle** (`datasource_id` → fichier `.db`),
+  via une connexion **en lecture seule** (`mode=ro` : toute écriture échoue côté SQLite).
+- **`http_request`** effectue un **vrai appel API REST** (`urllib`, schémas http/https
+  uniquement, timeout 15 s) et normalise la réponse JSON (`[...]` ou `{data:[...]}`).
+
+Les callables `datasource_query` et `http_fetch` sont injectés depuis `runs.py`
+(`execute_pipeline(..., datasource_query=..., http_fetch=...)`), si bien que le moteur
+reste sans dépendance DB/réseau et testable hors-ligne. En l'absence de configuration,
+ces nœuds se comportent comme avant (sortie vide + log).
 
 ### 6.3. Persistance des résultats
 - L'ancien `_simulate_run` (qui fabriquait `100 + i*37` lignes fictives) est remplacé

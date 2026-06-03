@@ -312,7 +312,21 @@ def _validate(rows, cfg, node, logs):
 
 # ─────────────────────────────── Dispatch ────────────────────────────────────
 
-def _execute_node(node, inputs, file_loader, logs, sql_generator=None):
+def _normalize_http(data):
+    """Normalise une réponse HTTP JSON en liste de lignes (dicts)."""
+    if isinstance(data, list):
+        return [r for r in data if isinstance(r, dict)]
+    if isinstance(data, dict):
+        # API qui enveloppe ses données : {"data": [...]} / {"results": [...]}
+        for key in ('data', 'results', 'items', 'rows'):
+            if isinstance(data.get(key), list):
+                return [r for r in data[key] if isinstance(r, dict)]
+        return [data]
+    return []
+
+
+def _execute_node(node, inputs, file_loader, logs, sql_generator=None,
+                  datasource_query=None, http_fetch=None):
     t = node.type_slug
     cfg = node.config or {}
     first = inputs[0] if inputs else []
@@ -340,12 +354,19 @@ def _execute_node(node, inputs, file_loader, logs, sql_generator=None):
     if t == 'sql_transform':
         return _sql(cfg.get('query', ''), first)
     if t == 'sql_query':
-        # Pas de datasource réelle branchée : transforme l'entrée si présente, sinon vide.
-        if not first:
-            logs.append({'level': 'warning', 'node_id': node.id,
-                         'message': f'{node.label or t} : datasource non connectée, sortie vide'})
-            return []
-        return _sql(cfg.get('query', ''), first)
+        ds_id = cfg.get('datasource_id')
+        query = cfg.get('query', '')
+        if ds_id and datasource_query is not None:
+            rows = datasource_query(ds_id, query, cfg.get('limit'))
+            logs.append({'level': 'info', 'node_id': node.id,
+                         'message': f'{node.label or t} : {len(rows)} ligne(s) lue(s) depuis la datasource'})
+            return rows
+        # Pas de datasource branchée : transforme l'entrée si présente, sinon vide.
+        if first:
+            return _sql(query, first) if query else list(first)
+        logs.append({'level': 'warning', 'node_id': node.id,
+                     'message': f'{node.label or t} : datasource non connectée, sortie vide'})
+        return []
     if t == 'validate':
         return _validate(first, cfg, node, logs)
     if t == 'merge':
@@ -385,6 +406,13 @@ def _execute_node(node, inputs, file_loader, logs, sql_generator=None):
                      'message': f'{node.label or t} : {len(first)} ligne(s) envoyée(s) (sortie terminale)'})
         return list(first)
     if t == 'http_request':
+        url = cfg.get('url')
+        if url and http_fetch is not None:
+            data = http_fetch(url, cfg.get('method', 'GET'), cfg.get('headers'), cfg.get('body'))
+            rows = _normalize_http(data)
+            logs.append({'level': 'info', 'node_id': node.id,
+                         'message': f'{node.label or t} : {len(rows)} ligne(s) reçue(s) de {url}'})
+            return rows
         logs.append({'level': 'warning', 'node_id': node.id,
                      'message': f'{node.label or t} : appel HTTP externe non exécuté'})
         return []
@@ -393,7 +421,8 @@ def _execute_node(node, inputs, file_loader, logs, sql_generator=None):
     return list(first)
 
 
-def execute_pipeline(nodes, edges, file_loader=None, sql_generator=None, preview_rows=10):
+def execute_pipeline(nodes, edges, file_loader=None, sql_generator=None,
+                     datasource_query=None, http_fetch=None, preview_rows=10):
     """Exécute le pipeline et retourne le détail par nœud.
 
     Returns:
@@ -423,7 +452,8 @@ def execute_pipeline(nodes, edges, file_loader=None, sql_generator=None, preview
         inputs = [outputs.get(src, []) for src in incoming[node.id]]
         in_rows = sum(len(i) for i in inputs)
         try:
-            data = _execute_node(node, inputs, file_loader, logs, sql_generator)
+            data = _execute_node(node, inputs, file_loader, logs, sql_generator,
+                                  datasource_query, http_fetch)
             outputs[node.id] = data
             duration = int((time.time() - started) * 1000)
             node_results[node.id] = {
