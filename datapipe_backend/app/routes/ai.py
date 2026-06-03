@@ -618,9 +618,14 @@ def explain_node():
 
     explanation = explanations.get(node_type, f'Nœud de type "{node_type}" qui traite les données du pipeline.')
 
-    if current_app.config.get('OPENAI_API_KEY') and node_type not in explanations:
+    if node_type not in explanations:
         prompt = f"Explique en 2-3 phrases simples ce que fait le nœud ETL de type '{node_type}' avec la config: {config}"
-        ai_resp = _call_openai([{'role': 'user', 'content': prompt}])
+        ai_resp = _call_claude(
+            system="Tu es un expert ETL qui explique le rôle des nœuds de pipeline de données.",
+            messages=[{'role': 'user', 'content': prompt}]
+        )
+        if not ai_resp:
+            ai_resp = _call_openai([{'role': 'user', 'content': prompt}])
         if ai_resp:
             explanation = ai_resp
 
