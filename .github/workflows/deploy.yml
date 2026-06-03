@@ -86,23 +86,31 @@ jobs:
             # On définit le nom de l'image en minuscules pour le VPS aussi
             IMAGE_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
             
-            # Aller dans le dossier du projet sur le VPS
-            cd ${{ secrets.DEPLOY_PATH || '~/JUNE_HACKATON2026' }}
+            # S'assurer que le dossier existe
+            mkdir -p ~/JUNE_HACKATON2026
+            cd ~/JUNE_HACKATON2026
             
-            # Mettre à jour le code source depuis git
-            echo "Mise à jour du code source..."
-            git fetch origin BALA_backend
-            git checkout BALA_backend
-            git pull origin BALA_backend
+            # Écrire directement le fichier docker-compose.yml sur le VPS
+            cat << 'EOF' > docker-compose.yml
+            version: '3.8'
             
-            # Aller dans le sous-dossier du backend
-            cd datapipe_backend
+            services:
+              backend:
+                image: ${DOCKER_IMAGE}
+                container_name: datapipe_backend
+                restart: always
+                ports:
+                  - "5005:5000"
+                volumes:
+                  - datapipe_data:/app/instance
+                  - datapipe_uploads:/app/uploads
+                env_file:
+                  - .env
             
-            # Configuration initiale de .env si nécessaire
-            if [ ! -f .env ]; then
-              echo "Warning: .env file not found. Copying .env.example..."
-              cp .env.example .env
-            fi
+            volumes:
+              datapipe_data:
+              datapipe_uploads:
+            EOF
             
             # Connexion au registre sur le VPS pour avoir le droit de pull
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
