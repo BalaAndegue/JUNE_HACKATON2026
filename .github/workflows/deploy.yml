@@ -21,13 +21,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd datapipe_backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run tests with pytest
         run: |
-          cd datapipe_backend
           pytest
 
   build:
