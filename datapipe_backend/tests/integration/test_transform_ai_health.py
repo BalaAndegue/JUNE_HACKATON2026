@@ -146,6 +146,23 @@ class TestAI:
         assert 'nodes' in d
         assert len(d['nodes']) > 0
 
+    def test_generate_pipeline(self, client, auth_headers):
+        resp = post_json(client, '/api/v1/ai/generate-pipeline', {
+            'prompt': 'Créer un pipeline d\'analyse des transactions avec filtre de montant > 50000 et export CSV',
+        }, headers=auth_headers)
+        assert resp.status_code == 200
+        d = resp.get_json()
+        assert 'nodes' in d
+        assert 'edges' in d
+        assert 'explanation' in d
+        assert len(d['nodes']) > 0
+        assert d['nodes'][0]['type'] == 'csvImport'
+
+    def test_generate_pipeline_missing_prompt(self, client, auth_headers):
+        resp = post_json(client, '/api/v1/ai/generate-pipeline', {}, headers=auth_headers)
+        assert resp.status_code == 400
+
+
     def test_explain_node(self, client, auth_headers):
         resp = post_json(client, '/api/v1/ai/explain-node', {
             'node_type': 'aggregate',

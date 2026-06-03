@@ -12,11 +12,13 @@ AI_SESSIONS = {}
 
 AI_MODELS = [
     {'id': 'datapipe-analyst', 'name': 'DataPipe Analyst', 'provider': 'internal', 'description': 'Optimized for ETL and data analysis tasks', 'max_tokens': 8192, 'available': True},
+    {'id': 'claude-3-5-haiku-20241022', 'name': 'Claude 3.5 Haiku', 'provider': 'anthropic', 'description': 'Most capable and fast Anthropic model', 'max_tokens': 2048, 'available': True},
     {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini', 'provider': 'openai', 'description': 'Fast and cost-effective', 'max_tokens': 16384, 'available': True},
     {'id': 'gpt-4o', 'name': 'GPT-4o', 'provider': 'openai', 'description': 'Most capable OpenAI model', 'max_tokens': 128000, 'available': True},
 ]
 
 AI_USAGE = {'tokens_used': 0, 'requests': 0, 'limit': 100000}
+
 
 
 def _call_openai(messages, model='gpt-4o-mini', max_tokens=1000):
@@ -49,6 +51,46 @@ def _call_openai(messages, model='gpt-4o-mini', max_tokens=1000):
         return None
 
 
+def _call_claude(system, messages, model=None, max_tokens=2048):
+    api_key = current_app.config.get('ANTHROPIC_API_KEY', '')
+    if not api_key:
+        return None
+
+    if not model:
+        model = current_app.config.get('CLAUDE_MODEL', 'claude-3-5-haiku-20241022')
+
+    try:
+        import urllib.request
+        import json as _json
+
+        payload = _json.dumps({
+            'model': model,
+            'messages': messages,
+            'system': system,
+            'max_tokens': max_tokens,
+            'temperature': 0.3,
+        }).encode()
+
+        req = urllib.request.Request(
+            'https://api.anthropic.com/v1/messages',
+            data=payload,
+            headers={
+                'x-api-key': api_key,
+                'anthropic-version': '2023-06-01',
+                'Content-Type': 'application/json'
+            },
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = _json.loads(resp.read())
+            AI_USAGE['tokens_used'] += result.get('usage', {}).get('total_tokens', 0)
+            AI_USAGE['requests'] += 1
+            return result['content'][0]['text']
+    except Exception as e:
+        current_app.logger.error(f"Claude API Error: {e}")
+        return None
+
+
+
 @ai_bp.route('/generate-transform', methods=['POST'])
 @jwt_required()
 def generate_transform():
@@ -68,9 +110,17 @@ Colonnes disponibles : {', '.join(columns)}
 Utilise {{input}} pour référencer le dataset d'entrée.
 Réponds avec UNIQUEMENT la requête SQL, sans explication."""
 
-    sql = _call_openai([{'role': 'user', 'content': prompt}])
+    sql = _call_claude(
+        system="Tu es un expert SQL pour l'ETL bancaire.",
+        messages=[{'role': 'user', 'content': f"Génère une requête SQL pour : \"{description}\". Colonnes disponibles : {', '.join(columns)}. Utilise {{input}} pour référencer le dataset d'entrée. Réponds avec UNIQUEMENT la requête SQL, sans explication."}]
+    )
 
     if not sql:
+        sql = _call_openai([{'role': 'user', 'content': prompt}])
+
+    used_mock = False
+    if not sql:
+        used_mock = True
         sql_map = {
             'somme': f"SELECT SUM(montant) as total, COUNT(*) as nb FROM {{input}}",
             'agreg': f"SELECT STRFTIME('%Y-%m', date_transaction) as mois, SUM(montant) as total FROM {{input}} GROUP BY mois ORDER BY mois DESC",
@@ -81,13 +131,291 @@ Réponds avec UNIQUEMENT la requête SQL, sans explication."""
         sql = next((v for k, v in sql_map.items() if k in desc_lower),
                    f"SELECT * FROM {{input}} -- TODO: implement: {description}")
 
+    # Clean potential markdown wrappers
+    import re
+    sql = re.sub(r"```sql\s*", "", sql)
+    sql = re.sub(r"```\s*", "", sql)
+    sql = sql.strip()
+
+    model_used = 'datapipe-analyst'
+    if not used_mock:
+        model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
+
     return jsonify({
         'query': sql,
         'description': description,
-        'model': 'gpt-4o-mini' if current_app.config.get('OPENAI_API_KEY') else 'datapipe-analyst',
-        'confidence': 0.92,
+        'model': model_used,
+        'confidence': 0.95 if not used_mock else 0.80,
     })
 
+
+
+# ─── Mock Intelligent Constantes & Helpers ─────────────────────────────────────
+import re
+import json as _json
+
+_SOURCE_KEYWORDS = {
+    "csvImport":  ["csv", "fichier", "transactions", "importe", "charge", "upload", "données"],
+    "jsonLoader": ["json", "clients", "loader", "api", "url", "endpoint"],
+    "sqlQuery":   ["sql", "requête", "base de données", "query", "db", "database"],
+}
+
+_TRANSFORM_KEYWORDS = {
+    "filter":      ["filtre", "filter", "où", "supérieur", "inférieur", "égal", "where",
+                    ">", "<", "montant", "condition", "sélectionne", "garde", "retient"],
+    "join":        ["join", "fusionne", "combine", "relie", "merge", "associe", "lien"],
+    "aggregation": ["groupe", "agrège", "sum", "somme", "count", "compte", "moyenne",
+                    "average", "group by", "par région", "par mois", "par agence", "total",
+                    "max", "min", "calcule"],
+    "renameCols":  ["renomme", "colonne", "rename", "supprime col", "réordonne"],
+    "cleanup":     ["nettoie", "doublon", "null", "vide", "propre", "clean", "supprime doublon"],
+    "aiTransform": ["ia transform", "transformation ia", "sql depuis texte", "générer sql"],
+}
+
+_OUTPUT_KEYWORDS = {
+    "tablePreview": ["tableau", "aperçu", "preview", "affiche", "visualise", "table", "résultat"],
+    "chart":        ["graphique", "chart", "bar", "courbe", "pie", "camembert", "histogramme",
+                    "visualise", "trace", "diagramme"],
+    "csvExport":    ["exporte", "télécharge", "download", "export", "csv export", "enregistre"],
+}
+
+_OPERATOR_KEYWORDS = {
+    ">":  ["supérieur", ">", "plus grand", "plus de", "dépasse"],
+    "<":  ["inférieur", "<", "moins de", "en dessous"],
+    ">=": ["supérieur ou égal", ">=", "au moins"],
+    "<=": ["inférieur ou égal", "<=", "au plus"],
+    "=":  ["égal", "=", "exactement", "vaut"],
+    "!=": ["différent", "!=", "pas égal"],
+}
+
+_BANKING_COLUMNS = ["montant", "date", "region", "agence", "client_id", "type_transaction", "statut", "id"]
+_BANKING_AGGS = {
+    "somme": "SUM", "sum": "SUM", "total": "SUM",
+    "count": "COUNT", "compte": "COUNT", "nombre": "COUNT",
+    "moyenne": "AVG", "average": "AVG", "avg": "AVG",
+    "max": "MAX", "maximum": "MAX",
+    "min": "MIN", "minimum": "MIN",
+}
+
+_GROUP_BY_KEYWORDS = {
+    "region": ["région", "region", "zone"],
+    "agence": ["agence", "branch", "succursale"],
+    "date":   ["mois", "month", "date", "jour", "année", "an"],
+    "type_transaction": ["type", "catégorie", "category"],
+}
+
+def _detect_nodes(prompt: str) -> list:
+    p = prompt.lower()
+    detected = []
+
+    # Sources
+    for node_type, keywords in _SOURCE_KEYWORDS.items():
+        if any(kw in p for kw in keywords):
+            if node_type not in detected:
+                detected.append(node_type)
+
+    if not any(t in detected for t in _SOURCE_KEYWORDS.keys()):
+        detected.append("csvImport")
+
+    if "join" in [t for t in _TRANSFORM_KEYWORDS.keys() if any(kw in p for kw in _TRANSFORM_KEYWORDS[t])]:
+        if "jsonLoader" not in detected and any(kw in p for kw in ["clients", "json"]):
+            detected.append("jsonLoader")
+
+    # Transformations
+    for node_type, keywords in _TRANSFORM_KEYWORDS.items():
+        if any(kw in p for kw in keywords):
+            if node_type not in detected:
+                detected.append(node_type)
+
+    # Outputs
+    for node_type, keywords in _OUTPUT_KEYWORDS.items():
+        if any(kw in p for kw in keywords):
+            if node_type not in detected:
+                detected.append(node_type)
+
+    if not any(t in detected for t in _OUTPUT_KEYWORDS.keys()):
+        detected.append("tablePreview")
+
+    return detected
+
+def _extract_filter_config(prompt: str) -> dict:
+    p = prompt.lower()
+    config = {"column": "montant", "operator": ">", "value": 50000}
+
+    for col in _BANKING_COLUMNS:
+        if col in p:
+            config["column"] = col
+            break
+
+    for op, keywords in _OPERATOR_KEYWORDS.items():
+        if any(kw in p for kw in keywords):
+            config["operator"] = op
+            break
+
+    numbers = re.findall(r'\b(\d[\d\s]*(?:\.\d+)?)\b', p)
+    if numbers:
+        try:
+            val = float(numbers[0].replace(" ", ""))
+            config["value"] = int(val) if val.is_integer() else val
+        except ValueError:
+            pass
+
+    return config
+
+def _extract_aggregation_config(prompt: str) -> dict:
+    p = prompt.lower()
+
+    group_by = []
+    for col, keywords in _GROUP_BY_KEYWORDS.items():
+        if any(kw in p for kw in keywords):
+            group_by.append(col)
+    if not group_by:
+        group_by = ["region"]
+
+    aggregates = []
+    for kw, func in _BANKING_AGGS.items():
+        if kw in p:
+            agg_col = "montant"
+            if "transaction" in p:
+                agg_col = "id" if func == "COUNT" else "montant"
+            alias_map = {"SUM": "total_montant", "COUNT": "nb_transactions", "AVG": "moy_montant",
+                         "MAX": "max_montant", "MIN": "min_montant"}
+            entry = {"func": func, "column": agg_col, "alias": alias_map.get(func, f"{func.lower()}_{agg_col}")}
+            if entry not in aggregates:
+                aggregates.append(entry)
+
+    if not aggregates:
+        aggregates = [{"func": "SUM", "column": "montant", "alias": "total_montant"}]
+
+    return {"groupBy": group_by, "aggregates": aggregates}
+
+def _extract_chart_config(prompt: str, agg_config: dict = None) -> dict:
+    p = prompt.lower()
+    chart_type = "bar"
+    if any(kw in p for kw in ["courbe", "line", "ligne", "évolution", "tendance"]):
+        chart_type = "line"
+    elif any(kw in p for kw in ["pie", "camembert", "circulaire", "secteur"]):
+        chart_type = "pie"
+
+    x_axis = "region"
+    y_axis = "total_montant"
+
+    if agg_config:
+        if agg_config.get("groupBy"):
+            x_axis = agg_config["groupBy"][0]
+        if agg_config.get("aggregates"):
+            y_axis = agg_config["aggregates"][0].get("alias", "valeur")
+
+    axis_labels = {"region": "Région", "agence": "Agence", "date": "Date",
+                   "type_transaction": "Type de transaction"}
+    agg_labels = {"total_montant": "Total montant (FCFA)", "nb_transactions": "Nombre de transactions",
+                   "moy_montant": "Montant moyen (FCFA)"}
+
+    title = f"{agg_labels.get(y_axis, y_axis)} par {axis_labels.get(x_axis, x_axis)}"
+    return {"type": chart_type, "xAxis": x_axis, "yAxis": y_axis, "title": title}
+
+def _build_nodes_and_edges(node_types: list, prompt: str) -> tuple:
+    nodes = []
+    edges = []
+    counter = 1
+    x = 100
+    y_main = 200
+    y_secondary = 420
+    last_main_id = None
+
+    filter_config = _extract_filter_config(prompt)
+    agg_config = _extract_aggregation_config(prompt)
+    chart_config = _extract_chart_config(prompt, agg_config)
+
+    for node_type in node_types:
+        node_id = f"ai-{counter}"
+        label_map = {
+            "csvImport": "CSV Import", "jsonLoader": "JSON Loader", "sqlQuery": "SQL Query",
+            "filter": "Filtre", "join": "Join", "aggregation": "Agrégation",
+            "renameCols": "Rename Cols", "cleanup": "Nettoyage", "aiTransform": "IA Transform",
+            "tablePreview": "Table Preview", "chart": "Chart", "csvExport": "Export CSV",
+        }
+
+        config_map = {
+            "csvImport":    {"filename": "transactions_banque.csv", "separator": ",", "encoding": "utf-8"},
+            "jsonLoader":   {"filename": "clients.json", "rootKey": None},
+            "sqlQuery":     {"query": "SELECT * FROM transactions LIMIT 100"},
+            "filter":       filter_config,
+            "join":         {"leftKey": "client_id", "rightKey": "client_id", "type": "LEFT"},
+            "aggregation":  agg_config,
+            "renameCols":   {"renames": {}, "drops": []},
+            "cleanup":      {"removeDuplicates": True, "dropNulls": False, "trimStrings": True},
+            "aiTransform":  {"prompt": "", "generatedSql": ""},
+            "tablePreview": {"pageSize": 25, "sortable": True},
+            "chart":        chart_config,
+            "csvExport":    {"filename": "resultat_datapipe.csv"},
+        }
+
+        if node_type == "jsonLoader" and "join" in node_types:
+            node_y = y_secondary
+        else:
+            node_y = y_main
+
+        node = {
+            "id": node_id,
+            "type": node_type,
+            "position": {"x": float(x), "y": float(node_y)},
+            "data": {
+                "label": label_map.get(node_type, node_type),
+                "nodeType": node_type,
+                "config": config_map.get(node_type, {}),
+            }
+        }
+        nodes.append(node)
+
+        if node_type != "jsonLoader" and last_main_id:
+            edge_id = f"ai-e{last_main_id.split('-')[-1]}-{counter}"
+            edge = {
+                "id": edge_id,
+                "source": last_main_id,
+                "target": node_id,
+                "animated": True,
+                "style": {"stroke": "#00d4ff", "strokeWidth": 2}
+            }
+            edges.append(edge)
+        elif node_type == "join" and "jsonLoader" in node_types:
+            json_node = next((n for n in nodes if n["type"] == "jsonLoader"), None)
+            if json_node:
+                edges.append({
+                    "id": f"ai-ejson-{counter}",
+                    "source": json_node["id"],
+                    "target": node_id,
+                    "animated": True,
+                    "style": {"stroke": "#00d4ff", "strokeWidth": 2}
+                })
+
+        if node_type not in ("jsonLoader",):
+            last_main_id = node_id
+            x += 280
+
+        counter += 1
+
+    return nodes, edges
+
+def _build_explanation(node_types: list) -> str:
+    steps = []
+    step_labels = {
+        "csvImport": "import CSV", "jsonLoader": "chargement JSON",
+        "filter": "filtrage des données", "join": "jointure des datasets",
+        "aggregation": "agrégation", "renameCols": "renommage des colonnes",
+        "cleanup": "nettoyage", "aiTransform": "transformation IA",
+        "tablePreview": "aperçu tableau", "chart": "visualisation graphique",
+        "csvExport": "export CSV",
+    }
+    for nt in node_types:
+        if nt in step_labels:
+            steps.append(step_labels[nt])
+
+    pipeline_str = " → ".join(steps)
+    return f"Pipeline généré ({len(node_types)} nœuds) : {pipeline_str}. Cliquez sur 'Exécuter' pour lancer le pipeline."
+
+
+# ─── Endpoints de Suggestion / Génération de Pipelines ──────────────────────────────────────
 
 @ai_bp.route('/suggest-pipeline', methods=['POST'])
 @jwt_required()
@@ -98,37 +426,175 @@ def suggest_pipeline():
         return jsonify({'error': err}), 400
 
     goal = data['goal']
-    prompt = f"""Tu es un expert en ETL bancaire. Suggère une structure de pipeline pour : "{goal}"
+    
+    # Tentative Claude
+    system_prompt = "Tu es un expert en ETL bancaire."
+    user_prompt = f"""Suggère une structure de pipeline pour : "{goal}"
 Réponds en JSON avec : name, description, nodes (liste de {{type, label}}), edges (liste de {{source_idx, target_idx}}).
 Types disponibles : csv_reader, json_reader, sql_query, filter, map, aggregate, join, sort, dedup, sql_transform, ai_transform, sql_write, file_export, notification_send."""
+    
+    ai_response = _call_claude(
+        system=system_prompt,
+        messages=[{'role': 'user', 'content': user_prompt}]
+    )
+    
+    if not ai_response:
+        # Tentative OpenAI
+        ai_response = _call_openai([{'role': 'user', 'content': user_prompt}])
 
-    ai_response = _call_openai([{'role': 'user', 'content': prompt}])
-
-    import json as _json
     if ai_response:
         try:
-            return jsonify(_json.loads(ai_response))
+            # Nettoyer le markdown potentiel
+            ai_response = re.sub(r"```json\s*", "", ai_response)
+            ai_response = re.sub(r"```\s*", "", ai_response)
+            ai_response = ai_response.strip()
+            parsed = _json.loads(ai_response)
+            parsed['mock'] = False
+            return jsonify(parsed)
         except Exception:
             pass
 
+    # Fallback sur notre mock intelligent enrichi adapté au format attendu par Bala
+    node_types = _detect_nodes(goal)
+    nodes_simple = []
+    edges_simple = []
+    
+    type_conversion = {
+        "csvImport": "csv_reader",
+        "jsonLoader": "json_reader",
+        "sqlQuery": "sql_query",
+        "filter": "filter",
+        "join": "join",
+        "aggregation": "aggregate",
+        "renameCols": "map",
+        "cleanup": "dedup",
+        "aiTransform": "ai_transform",
+        "tablePreview": "map",
+        "chart": "file_export",
+        "csvExport": "file_export"
+    }
+    
+    for i, nt in enumerate(node_types):
+        nodes_simple.append({
+            'type': type_conversion.get(nt, 'filter'),
+            'label': nt.capitalize()
+        })
+        if i > 0:
+            edges_simple.append({
+                'source_idx': i - 1,
+                'target_idx': i
+            })
+            
     return jsonify({
         'name': f'Pipeline: {goal[:50]}',
         'description': f'Pipeline suggéré pour: {goal}',
         'confidence': 0.85,
-        'nodes': [
-            {'type': 'csv_reader', 'label': 'Charger données'},
-            {'type': 'validate', 'label': 'Valider'},
-            {'type': 'filter', 'label': 'Filtrer'},
-            {'type': 'aggregate', 'label': 'Agréger'},
-            {'type': 'sql_write', 'label': 'Sauvegarder'},
-        ],
-        'edges': [
-            {'source_idx': 0, 'target_idx': 1},
-            {'source_idx': 1, 'target_idx': 2},
-            {'source_idx': 2, 'target_idx': 3},
-            {'source_idx': 3, 'target_idx': 4},
-        ],
+        'nodes': nodes_simple,
+        'edges': edges_simple,
+        'mock': True
     })
+
+
+@ai_bp.route('/generate-pipeline', methods=['POST'])
+@jwt_required()
+def generate_pipeline():
+    """
+    Génère un pipeline complet au format React Flow (nodes + edges).
+    Compatible avec notre hook useAIPipeline et le store React Flow.
+    """
+    data = request.get_json()
+    err = validate_required(data, ['prompt'])
+    if err:
+        return jsonify({'error': err}), 400
+
+    prompt = data['prompt']
+    
+    # Prompt Système pour React Flow JSON
+    system_prompt = """Tu es DataPipe AI, un expert en pipelines de données ETL visuels.
+Tu génères des pipelines JSON pour l'application DataPipe, compatibles avec React Flow.
+
+NŒUDS DISPONIBLES :
+- csvImport    : importe un fichier CSV (SOURCE, couleur verte)
+- jsonLoader   : charge un fichier JSON ou URL API (SOURCE, couleur verte)
+- sqlQuery     : exécute une requête SQL sur une DB (SOURCE, couleur verte)
+- filter       : filtre les données selon une condition (TRANSFORM)
+- join         : fusionne 2 DataFrames (TRANSFORM)
+- aggregation  : agrège avec GROUP BY + fonctions (TRANSFORM)
+- renameCols   : renomme/supprime/réordonne les colonnes (TRANSFORM)
+- cleanup      : nettoie les données - doublons, nulls, trim (TRANSFORM)
+- aiTransform  : transformation IA SQL DuckDB (IA, couleur violette)
+- tablePreview : affiche un tableau interactif (OUTPUT, couleur ambre)
+- chart        : affiche un graphique Recharts (OUTPUT, couleur ambre)
+- csvExport    : exporte le résultat en CSV téléchargeable (OUTPUT, couleur ambre)
+
+RÈGLES DE POSITIONNEMENT :
+- x débute à 100, incrémente de 280 par nœud de gauche à droite
+- y = 200 par défaut (flux principal horizontal)
+- Pour les join : la 2ème source est positionnée à y = 420
+- Ne jamais dépasser x = 2200
+
+FORMAT DE RÉPONSE (JSON STRICT, aucun texte autour) :
+{
+  "nodes": [
+    {
+      "id": "ai-1",
+      "type": "csvImport",
+      "position": {"x": 100, "y": 200},
+      "data": {
+        "label": "CSV Import",
+        "nodeType": "csvImport",
+        "config": {}
+      }
+    }
+  ],
+  "edges": [
+    {"id": "ai-e1-2", "source": "ai-1", "target": "ai-2", "animated": true}
+  ],
+  "explanation": "Description courte du pipeline généré (1-2 sentences, in French)"
+}
+
+Réponds UNIQUEMENT avec le JSON valide."""
+
+    ai_response = _call_claude(
+        system=system_prompt,
+        messages=[{'role': 'user', 'content': f"Génère un pipeline pour : {prompt}"}],
+        max_tokens=3000
+    )
+    
+    if not ai_response:
+        ai_response = _call_openai(
+            messages=[
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': f"Génère un pipeline pour : {prompt}"}
+            ],
+            max_tokens=3000
+        )
+        
+    if ai_response:
+        try:
+            ai_response = re.sub(r"```json\s*", "", ai_response)
+            ai_response = re.sub(r"```\s*", "", ai_response)
+            ai_response = ai_response.strip()
+            parsed = _json.loads(ai_response)
+            parsed['mock'] = False
+            parsed['node_count'] = len(parsed.get('nodes', []))
+            return jsonify(parsed)
+        except Exception:
+            pass
+
+    # Fallback mock intelligent React Flow
+    node_types = _detect_nodes(prompt)
+    nodes, edges = _build_nodes_and_edges(node_types, prompt)
+    explanation = _build_explanation(node_types)
+
+    return jsonify({
+        "nodes": nodes,
+        "edges": edges,
+        "explanation": explanation,
+        "mock": True,
+        "node_count": len(nodes)
+    })
+
 
 
 @ai_bp.route('/explain-node', methods=['POST'])
@@ -308,21 +774,31 @@ Tu aides les utilisateurs à construire des pipelines, écrire des requêtes SQL
 Réponds en français de manière concise et pratique."""
 
     AI_SESSIONS[session_id].append({'role': 'user', 'content': data['message']})
-    messages = [{'role': 'system', 'content': system_prompt}] + AI_SESSIONS[session_id][-10:]
 
-    ai_response = _call_openai(messages)
-
+    ai_response = _call_claude(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
+    
     if not ai_response:
+        messages = [{'role': 'system', 'content': system_prompt}] + AI_SESSIONS[session_id][-10:]
+        ai_response = _call_openai(messages)
+
+    used_mock = False
+    if not ai_response:
+        used_mock = True
         ai_response = _get_fallback_response(data['message'])
 
     AI_SESSIONS[session_id].append({'role': 'assistant', 'content': ai_response})
+
+    model_used = 'datapipe-analyst'
+    if not used_mock:
+        model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
 
     return jsonify({
         'session_id': session_id,
         'message': data['message'],
         'response': ai_response,
-        'model': 'gpt-4o-mini' if current_app.config.get('OPENAI_API_KEY') else 'datapipe-analyst',
+        'model': model_used,
     })
+
 
 
 def _get_fallback_response(message):

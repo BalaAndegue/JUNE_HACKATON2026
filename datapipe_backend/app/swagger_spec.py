@@ -1661,6 +1661,14 @@ SWAGGER_TEMPLATE = {
                      }}],
                      "responses": {"200": {"description": "Structure de pipeline suggérée"}}}
         },
+        "/ai/generate-pipeline": {
+            "post": {"tags": ["AI"], "summary": "Générer un pipeline React Flow complet depuis un prompt",
+                     "parameters": [{"in": "body", "name": "body", "required": True, "schema": {
+                         "type": "object", "required": ["prompt"],
+                         "properties": {"prompt": {"type": "string", "example": "Créer un pipeline d'analyse des transactions avec filtre de montant > 50000 et export CSV"}},
+                     }}],
+                     "responses": {"200": {"description": "Pipeline React Flow (nodes + edges) généré"}}}
+        },
         "/ai/explain-node": {
             "post": {"tags": ["AI"], "summary": "Expliquer ce que fait un nœud",
                      "parameters": [{"in": "body", "name": "body", "required": True, "schema": {
