@@ -7,7 +7,7 @@ SWAGGER_SCHEMES = [
     scheme.strip()
     for scheme in os.getenv('SWAGGER_SCHEMES', 'http').split(',')
     if scheme.strip()
-]
+]localhost:5000
 
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",
