@@ -3,6 +3,13 @@
 # Prérequis : un .env racine avec DOMAIN=... et CERTBOT_EMAIL=...
 
 services:
+  backend:
+    # URLs publiques injectées depuis ${DOMAIN} (rien à éditer dans datapipe_backend/.env)
+    # -> webhook Telegram auto + liens éditeur en https
+    environment:
+      - PUBLIC_URL=https://${DOMAIN}
+      - FRONTEND_URL=https://${DOMAIN}
+
   frontend:
     build:
       args:

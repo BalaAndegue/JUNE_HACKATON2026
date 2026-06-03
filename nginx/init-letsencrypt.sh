@@ -22,6 +22,7 @@ $COMPOSE run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot -d $DOMAIN \
     --email $CERTBOT_EMAIL --agree-tos --no-eff-email --non-interactive'" certbot
 
-echo "4/4 Rechargement de nginx…"
+echo "4/4 Rechargement nginx + relance backend (webhook Telegram avec cert valide)…"
 $COMPOSE exec nginx nginx -s reload
-echo "✅ HTTPS prêt : https://$DOMAIN"
+$COMPOSE restart backend
+echo "✅ HTTPS prêt : https://$DOMAIN  (web + /api + bot Telegram en webhook)"
