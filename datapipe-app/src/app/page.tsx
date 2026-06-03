@@ -591,11 +591,11 @@ function ActorsSection() {
                     boxShadow: active === i ? '0 0 8px rgba(255,109,53,0.5)' : 'none' }} />
                 <div>
                   <p className="text-sm font-semibold transition-colors duration-200"
-                    style={{ color: active === i ? '#ffffff' : 'rgba(255,255,255,0.32)' }}>
+                    style={{ color: active === i ? '#ffffff' : 'rgba(15,23,42,0.32)' }}>
                     {a.role}
                   </p>
                   <p className="mt-0.5 text-xs transition-colors duration-200"
-                    style={{ color: active === i ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)' }}>
+                    style={{ color: active === i ? 'rgba(15,23,42,0.4)' : 'rgba(15,23,42,0.15)' }}>
                     {a.desc}
                   </p>
                 </div>
@@ -613,7 +613,7 @@ function ActorsSection() {
               {ACTORS[active].nodes.map((n, i) => (
                 <div key={i}>
                   <div className="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-colors hover:bg-white/3"
-                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(15,23,42,0.07)',
+                    style={{ background: 'rgba(15,23,42,0.025)', border: '1px solid rgba(15,23,42,0.07)',
                       animation: `slide-up 0.45s cubic-bezier(0.16,1,0.3,1) ${i * 70}ms both` }}>
                     <div className="h-1.5 w-1.5 rounded-full bg-[#ff6d35] opacity-70 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -694,12 +694,12 @@ function ImportVisual() {
             onClick={() => setExpanded(expanded === i ? null : i)}
             className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all"
             style={{
-              background: expanded === i ? 'rgba(255,109,53,0.06)' : 'rgba(255,255,255,0.025)',
+              background: expanded === i ? 'rgba(255,109,53,0.06)' : 'rgba(15,23,42,0.025)',
               border: `1px solid ${expanded===i ? 'rgba(255,109,53,0.3)' : 'rgba(15,23,42,0.07)'}`,
             }}
           >
             <div className="h-2 w-2 shrink-0 rounded-full" style={{
-              background: phases[i]==='done' ? '#10b981' : phases[i]==='loading' ? '#3b82f6' : 'rgba(255,255,255,0.12)',
+              background: phases[i]==='done' ? '#10b981' : phases[i]==='loading' ? '#3b82f6' : 'rgba(15,23,42,0.12)',
               animation: phases[i]==='loading' ? 'pulse-dot 1.2s infinite' : 'none',
             }} />
             <div className="flex-1 min-w-0">
@@ -749,7 +749,7 @@ function TransformVisual() {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl px-4 py-3.5" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(15,23,42,0.07)' }}>
+      <div className="rounded-xl px-4 py-3.5" style={{ background:'rgba(15,23,42,0.025)', border:'1px solid rgba(15,23,42,0.07)' }}>
         <p className="text-[10px] uppercase tracking-widest text-gray-700 mb-2.5">Filtre actif</p>
         <p className="font-mono text-sm text-slate-800">
           montant{' '}
@@ -777,7 +777,7 @@ function TransformVisual() {
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(15,23,42,0.06)' }}>
+      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background:'rgba(15,23,42,0.025)', border:'1px solid rgba(15,23,42,0.06)' }}>
         <span className="text-[10px] text-slate-500 font-mono">{agg}(montant) =</span>
         <span className="ml-auto text-sm font-bold text-slate-900 font-mono">{AGGS[agg]}</span>
       </div>
@@ -837,7 +837,7 @@ function VisualiseVisual() {
         <button
           onClick={() => setSorted(s => !s)}
           className="flex-1 rounded-lg py-2 text-[11px] font-semibold transition-all hover:bg-white/6 active:scale-95"
-          style={{ background:'rgba(255,255,255,0.025)', border:`1px solid ${sorted?'rgba(255,109,53,0.35)':'rgba(15,23,42,0.07)'}`, color:sorted?'#ff6d35':'#6b7280' }}
+          style={{ background:'rgba(15,23,42,0.025)', border:`1px solid ${sorted?'rgba(255,109,53,0.35)':'rgba(15,23,42,0.07)'}`, color:sorted?'#ff6d35':'#6b7280' }}
         >
           {sorted ? 'Trié ↓' : 'Trier ↓'}
         </button>
@@ -958,7 +958,7 @@ function NodesSection() {
             {NODE_LIST.map((n, i) => (
               <div key={i}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-default transition-all duration-150 hover:-translate-y-0.5 group"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(15,23,42,0.07)' }}
+                style={{ background: 'rgba(15,23,42,0.025)', border: '1px solid rgba(15,23,42,0.07)' }}
               >
                 <div className="h-2 w-2 shrink-0 rounded-full transition-all duration-200 group-hover:scale-125"
                   style={{ background: n.c, boxShadow: `0 0 6px ${n.c}60` }} />
@@ -1033,20 +1033,17 @@ function Footer() {
         borderRadius: 24,
         overflow: 'hidden',
         position: 'relative',
-        // Liquid glass : transparent en haut → sombre en bas
-        background: 'linear-gradient(to bottom, rgba(15,23,42,0.05) 0%, rgba(10,10,12,0.72) 40%, rgba(6,6,8,0.92) 100%)',
-        backdropFilter: 'blur(28px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(160%)',
-        // Bordure subtile tout autour — pas de ligne blanche marquée
-        border: '1px solid rgba(15,23,42,0.07)',
-        // Reflet lumineux en haut de la card uniquement
-        boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.08), 0 32px 80px rgba(0,0,0,0.4)',
+        // Light glass footer
+        background: 'linear-gradient(to bottom, #ffffff 0%, #f1f3f7 100%)',
+        // Bordure subtile tout autour
+        border: '1px solid #e6e8ec',
+        boxShadow: '0 -1px 0 rgba(15,23,42,0.04), 0 24px 60px rgba(15,23,42,0.10)',
       }}>
 
         {/* Shimmer iridescent — identique au header */}
         <div style={{
           position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-          background: 'linear-gradient(135deg, rgba(255,109,53,0.04) 0%, transparent 40%, rgba(255,255,255,0.02) 70%, transparent 100%)',
+          background: 'linear-gradient(135deg, rgba(255,109,53,0.04) 0%, transparent 40%, rgba(15,23,42,0.02) 70%, transparent 100%)',
         }} />
 
         {/* Contenu — par-dessus le glass */}
@@ -1062,15 +1059,15 @@ function Footer() {
                   <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg" />
                   <span className="text-sm font-bold text-slate-800">DataPipe</span>
                 </Link>
-                <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
+                <p className="text-xs leading-relaxed" style={{ color: 'rgba(15,23,42,0.28)' }}>
                   Pipelines visuels.<br />Propulsé par Claude.
                 </p>
                 <div className="flex items-center gap-2">
                   {['T','G','D','Li'].map(s => (
                     <div key={s}
                       className="flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-all hover:bg-slate-900/[0.06]"
-                      style={{ border: '1px solid rgba(255,255,255,0.09)' }}>
-                      <span className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.28)' }}>{s}</span>
+                      style={{ border: '1px solid rgba(15,23,42,0.09)' }}>
+                      <span className="text-[10px] font-bold" style={{ color: 'rgba(15,23,42,0.28)' }}>{s}</span>
                     </div>
                   ))}
                 </div>
@@ -1084,15 +1081,15 @@ function Footer() {
                 { title: 'Entreprise', links: ['À propos','Carrières','Contact','Presse','Partenaires','Légal'] },
               ].map(col => (
                 <div key={col.title} className="space-y-3">
-                  <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.42)' }}>{col.title}</p>
+                  <p className="text-xs font-semibold" style={{ color: 'rgba(15,23,42,0.42)' }}>{col.title}</p>
                   <ul className="space-y-2">
                     {col.links.map(l => (
                       <li key={l}>
                         <span
                           className="text-xs cursor-pointer transition-colors"
-                          style={{ color: 'rgba(255,255,255,0.22)' }}
-                          onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.72)')}
-                          onMouseOut={e  => (e.currentTarget.style.color = 'rgba(255,255,255,0.22)')}
+                          style={{ color: 'rgba(15,23,42,0.22)' }}
+                          onMouseOver={e => (e.currentTarget.style.color = 'rgba(15,23,42,0.72)')}
+                          onMouseOut={e  => (e.currentTarget.style.color = 'rgba(15,23,42,0.22)')}
                         >{l}</span>
                       </li>
                     ))}
@@ -1116,7 +1113,7 @@ function Footer() {
                 { title: 'Guides',         links: ['Premiers pas','Pipeline en 5 min','Nœud IA','Connecter une DB'] },
               ].map(col => (
                 <div key={col.title} className="space-y-3">
-                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.18)' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(15,23,42,0.18)' }}>
                     {col.title}
                   </p>
                   <ul className="space-y-1.5">
@@ -1124,9 +1121,9 @@ function Footer() {
                       <li key={l}>
                         <span
                           className="text-xs cursor-pointer transition-colors"
-                          style={{ color: 'rgba(255,255,255,0.16)' }}
-                          onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-                          onMouseOut={e  => (e.currentTarget.style.color = 'rgba(255,255,255,0.16)')}
+                          style={{ color: 'rgba(15,23,42,0.16)' }}
+                          onMouseOver={e => (e.currentTarget.style.color = 'rgba(15,23,42,0.5)')}
+                          onMouseOut={e  => (e.currentTarget.style.color = 'rgba(15,23,42,0.16)')}
                         >{l}</span>
                       </li>
                     ))}
@@ -1158,9 +1155,9 @@ function Footer() {
                 <span
                   key={l}
                   className="text-xs cursor-pointer transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.14)' }}
-                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
-                  onMouseOut={e  => (e.currentTarget.style.color = 'rgba(255,255,255,0.14)')}
+                  style={{ color: 'rgba(15,23,42,0.14)' }}
+                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(15,23,42,0.45)')}
+                  onMouseOut={e  => (e.currentTarget.style.color = 'rgba(15,23,42,0.14)')}
                 >{l}</span>
               ))}
             </div>
@@ -1185,7 +1182,7 @@ export default function LandingPage() {
   return (
     <div className="${poppins.variable} relative min-h-screen overflow-x-hidden text-slate-800" style={{
       background: '#eaedf2',
-      backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.09) 1px, transparent 1px)',
+      backgroundImage: 'radial-gradient(circle, rgba(15,23,42,0.09) 1px, transparent 1px)',
       backgroundSize: '14px 14px',
       fontFamily:  "'Poppins', sans-serif",
     }}>
@@ -1209,10 +1206,10 @@ export default function LandingPage() {
           {/* Liquid glass — fond */}
           <div style={{
             position: 'absolute', inset: 0,
-            backdropFilter: 'blur(24px) saturate(200%) brightness(0.88)',
-            WebkitBackdropFilter: 'blur(24px) saturate(200%) brightness(0.88)',
-            background: 'linear-gradient(135deg, rgba(15,23,42,0.07) 0%, rgba(255,255,255,0.02) 50%, rgba(255,109,53,0.03) 100%)',
-            border: '1px solid rgba(255,255,255,0.09)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.72) 50%, rgba(255,109,53,0.06) 100%)',
+            border: '1px solid rgba(15,23,42,0.07)',
             borderRadius: 16,
             zIndex: -1,
           }} />
@@ -1227,7 +1224,7 @@ export default function LandingPage() {
           {/* Ligne basse lumineuse */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, zIndex: -1,
-            background: 'linear-gradient(90deg, transparent, rgba(255,109,53,0.3), rgba(255,255,255,0.15), rgba(255,109,53,0.3), transparent)',
+            background: 'linear-gradient(90deg, transparent, rgba(255,109,53,0.3), rgba(15,23,42,0.15), rgba(255,109,53,0.3), transparent)',
           }} />
 
           {/* Contenu */}
