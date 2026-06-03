@@ -317,7 +317,7 @@ def file_schema_alias(file_id):
 def _model_name(used_mock):
     if used_mock:
         return 'datapipe-analyst'
-    return 'claude' if current_app.config.get('ANTHROPIC_API_KEY') else 'openai'
+    return ai_mod._llm_model_name()
 
 
 @compat_bp.route('/ai/generate/pipeline', methods=['POST'])
@@ -409,7 +409,7 @@ def ai_suggest_pipeline_alias():
 def ai_explain_sql_alias():
     data = request.get_json() or {}
     sql = data.get('sql', '')
-    resp = ai_mod._call_claude(
+    resp = ai_mod._call_llm(
         system="Tu expliques des requêtes SQL en français simple.",
         messages=[{'role': 'user', 'content': f"Explique en 2 phrases : {sql}"}])
     if not resp:

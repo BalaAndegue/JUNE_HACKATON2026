@@ -13,6 +13,7 @@ AI_SESSIONS = {}
 AI_MODELS = [
     {'id': 'datapipe-analyst', 'name': 'DataPipe Analyst', 'provider': 'internal', 'description': 'Optimized for ETL and data analysis tasks', 'max_tokens': 8192, 'available': True},
     {'id': 'claude-3-5-haiku-20241022', 'name': 'Claude 3.5 Haiku', 'provider': 'anthropic', 'description': 'Most capable and fast Anthropic model', 'max_tokens': 2048, 'available': True},
+    {'id': 'gemini-2.0-flash', 'name': 'Gemini 2.0 Flash', 'provider': 'google', 'description': 'Fast Google model, generous free tier', 'max_tokens': 8192, 'available': True},
     {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini', 'provider': 'openai', 'description': 'Fast and cost-effective', 'max_tokens': 16384, 'available': True},
     {'id': 'gpt-4o', 'name': 'GPT-4o', 'provider': 'openai', 'description': 'Most capable OpenAI model', 'max_tokens': 128000, 'available': True},
 ]
@@ -91,6 +92,67 @@ def _call_claude(system, messages, model=None, max_tokens=2048):
 
 
 
+def _call_gemini(system, messages, model=None, max_tokens=2048):
+    api_key = current_app.config.get('GEMINI_API_KEY', '')
+    if not api_key:
+        return None
+
+    if not model:
+        model = current_app.config.get('GEMINI_MODEL', 'gemini-2.0-flash')
+
+    try:
+        import urllib.request
+        import json as _json
+
+        # Gemini: roles are 'user' / 'model', system goes in systemInstruction.
+        contents = [{
+            'role': 'model' if m.get('role') == 'assistant' else 'user',
+            'parts': [{'text': m.get('content', '')}],
+        } for m in messages]
+
+        payload = _json.dumps({
+            'contents': contents,
+            'systemInstruction': {'parts': [{'text': system}]},
+            'generationConfig': {'temperature': 0.3, 'maxOutputTokens': max_tokens},
+        }).encode()
+
+        url = (f'https://generativelanguage.googleapis.com/v1beta/models/'
+               f'{model}:generateContent?key={api_key}')
+        req = urllib.request.Request(
+            url, data=payload, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = _json.loads(resp.read())
+            usage = result.get('usageMetadata', {})
+            AI_USAGE['tokens_used'] += usage.get('totalTokenCount', 0)
+            AI_USAGE['requests'] += 1
+            return result['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        current_app.logger.error(f"Gemini API Error: {e}")
+        return None
+
+
+def _call_llm(system, messages, max_tokens=2048):
+    """Unified LLM call with provider fallback: Claude -> Gemini -> OpenAI."""
+    resp = _call_claude(system=system, messages=messages, max_tokens=max_tokens)
+    if not resp:
+        resp = _call_gemini(system=system, messages=messages, max_tokens=max_tokens)
+    if not resp:
+        resp = _call_openai(
+            [{'role': 'system', 'content': system}] + list(messages), max_tokens=max_tokens)
+    return resp
+
+
+def _llm_model_name():
+    cfg = current_app.config
+    if cfg.get('ANTHROPIC_API_KEY'):
+        return 'claude-3-5-haiku-20241022'
+    if cfg.get('GEMINI_API_KEY'):
+        return cfg.get('GEMINI_MODEL', 'gemini-2.0-flash')
+    if cfg.get('OPENAI_API_KEY'):
+        return 'gpt-4o-mini'
+    return 'datapipe-analyst'
+
+
 @ai_bp.route('/generate-transform', methods=['POST'])
 @jwt_required()
 def generate_transform():
@@ -110,13 +172,10 @@ Colonnes disponibles : {', '.join(columns)}
 Utilise {{input}} pour référencer le dataset d'entrée.
 Réponds avec UNIQUEMENT la requête SQL, sans explication."""
 
-    sql = _call_claude(
+    sql = _call_llm(
         system="Tu es un expert SQL pour l'ETL bancaire.",
         messages=[{'role': 'user', 'content': f"Génère une requête SQL pour : \"{description}\". Colonnes disponibles : {', '.join(columns)}. Utilise {{input}} pour référencer le dataset d'entrée. Réponds avec UNIQUEMENT la requête SQL, sans explication."}]
     )
-
-    if not sql:
-        sql = _call_openai([{'role': 'user', 'content': prompt}])
 
     used_mock = False
     if not sql:
@@ -139,7 +198,7 @@ Réponds avec UNIQUEMENT la requête SQL, sans explication."""
 
     model_used = 'datapipe-analyst'
     if not used_mock:
-        model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
+        model_used = _llm_model_name()
 
     return jsonify({
         'query': sql,
@@ -161,10 +220,7 @@ def _agent_sql_and_explanation(description, columns):
             "Utilise {input} comme nom de table d'entrée.\n"
             "Réponds en JSON STRICT : {\"sql\": \"...\", \"explanation\": "
             "\"explication en français en 1-2 phrases de ce que fait la requête\"}.")
-    raw = _call_claude(system=system, messages=[{'role': 'user', 'content': user}])
-    if not raw:
-        raw = _call_openai([{'role': 'system', 'content': system},
-                            {'role': 'user', 'content': user}])
+    raw = _call_llm(system=system, messages=[{'role': 'user', 'content': user}])
     if raw:
         try:
             cleaned = re.sub(r"```json\s*|```\s*", "", raw).strip()
@@ -273,9 +329,7 @@ def agent_transform():
         'description': description,
         'generated_sql': sql,
         'explanation': explanation,
-        'model': ('claude' if current_app.config.get('ANTHROPIC_API_KEY')
-                  else 'openai' if current_app.config.get('OPENAI_API_KEY')
-                  else 'datapipe-analyst') if not used_mock else 'datapipe-analyst',
+        'model': _llm_model_name() if not used_mock else 'datapipe-analyst',
         'validation': {'safe': safe, 'issues': issues},
         'status': 'rejected' if not safe else 'pending_confirmation',
     }
@@ -588,14 +642,10 @@ def suggest_pipeline():
 Réponds en JSON avec : name, description, nodes (liste de {{type, label}}), edges (liste de {{source_idx, target_idx}}).
 Types disponibles : csv_reader, json_reader, sql_query, filter, map, aggregate, join, sort, dedup, sql_transform, ai_transform, sql_write, file_export, notification_send."""
     
-    ai_response = _call_claude(
+    ai_response = _call_llm(
         system=system_prompt,
         messages=[{'role': 'user', 'content': user_prompt}]
     )
-    
-    if not ai_response:
-        # Tentative OpenAI
-        ai_response = _call_openai([{'role': 'user', 'content': user_prompt}])
 
     if ai_response:
         try:
@@ -710,21 +760,12 @@ FORMAT DE RÉPONSE (JSON STRICT, aucun texte autour) :
 
 Réponds UNIQUEMENT avec le JSON valide."""
 
-    ai_response = _call_claude(
+    ai_response = _call_llm(
         system=system_prompt,
         messages=[{'role': 'user', 'content': f"Génère un pipeline pour : {prompt}"}],
         max_tokens=3000
     )
-    
-    if not ai_response:
-        ai_response = _call_openai(
-            messages=[
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': f"Génère un pipeline pour : {prompt}"}
-            ],
-            max_tokens=3000
-        )
-        
+
     if ai_response:
         try:
             ai_response = re.sub(r"```json\s*", "", ai_response)
@@ -935,11 +976,7 @@ Réponds en français de manière concise et pratique."""
 
     AI_SESSIONS[session_id].append({'role': 'user', 'content': message})
 
-    ai_response = _call_claude(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
-    
-    if not ai_response:
-        messages = [{'role': 'system', 'content': system_prompt}] + AI_SESSIONS[session_id][-10:]
-        ai_response = _call_openai(messages)
+    ai_response = _call_llm(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
 
     used_mock = False
     if not ai_response:
@@ -950,7 +987,7 @@ Réponds en français de manière concise et pratique."""
 
     model_used = 'datapipe-analyst'
     if not used_mock:
-        model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
+        model_used = _llm_model_name()
 
     return jsonify({
         'session_id': session_id,
