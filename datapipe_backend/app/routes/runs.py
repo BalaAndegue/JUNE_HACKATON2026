@@ -62,6 +62,13 @@ def _file_loader(file_id):
     return _read_file_rows(db_file)
 
 
+def _sql_generator(instruction, columns):
+    """Génère une requête SQL depuis une instruction NL (pour le nœud ai_transform)."""
+    from .ai import generate_sql
+    sql, _model, _mock = generate_sql(instruction, columns)
+    return sql
+
+
 def _execute_run(pipeline, run):
     """Exécute réellement le pipeline nœud par nœud via le moteur ETL."""
     run.status = 'running'
@@ -71,7 +78,8 @@ def _execute_run(pipeline, run):
     edges = Edge.query.filter_by(pipeline_id=pipeline.id).all()
 
     try:
-        result = execute_pipeline(nodes, edges, file_loader=_file_loader)
+        result = execute_pipeline(nodes, edges, file_loader=_file_loader,
+                                  sql_generator=_sql_generator)
     except CycleError as e:
         run.status = 'error'
         run.error_message = str(e)

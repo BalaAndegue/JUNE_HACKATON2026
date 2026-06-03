@@ -231,3 +231,42 @@ class TestRealExecution:
         assert dl.status_code == 200
         lines = [l for l in dl.get_data(as_text=True).splitlines() if l.strip()]
         assert len(lines) == n + 1
+
+    def test_ai_transform_node_executes_generated_sql(self, client, auth_headers, workspace_id, monkeypatch):
+        """Le nœud ai_transform doit générer du SQL via l'IA puis l'exécuter réellement."""
+        # On neutralise le réseau : l'IA renvoie une requête déterministe.
+        monkeypatch.setattr(
+            'app.routes.ai.generate_sql',
+            lambda instruction, columns: (
+                'SELECT type, SUM(montant) as total FROM {input} GROUP BY type', 'test-model', True),
+        )
+
+        csv_content = (
+            "id,montant,type\n"
+            "1,1000,virement\n2,2000,virement\n3,500,retrait\n4,1500,retrait\n"
+        )
+        up = client.post('/api/v1/files/upload', data={
+            'workspace_id': workspace_id,
+            'file': (io.BytesIO(csv_content.encode()), 'tx.csv'),
+        }, content_type='multipart/form-data', headers=auth_headers)
+        file_id = up.get_json()['id']
+
+        pip = post_json(client, '/api/v1/pipelines', {
+            'name': 'Pipeline IA', 'workspace_id': workspace_id,
+        }, headers=auth_headers).get_json()
+
+        n_read = post_json(client, f'{PBASE}/{pip["id"]}/nodes', {
+            'type': 'csv_reader', 'label': 'Lire', 'position': {'x': 0, 'y': 0},
+            'config': {'file_id': file_id},
+        }, headers=auth_headers).get_json()['id']
+        n_ai = post_json(client, f'{PBASE}/{pip["id"]}/nodes', {
+            'type': 'ai_transform', 'label': 'Total par type', 'position': {'x': 200, 'y': 0},
+            'config': {'instruction': 'somme des montants par type'},
+        }, headers=auth_headers).get_json()['id']
+        post_json(client, f'{PBASE}/{pip["id"]}/edges',
+                  {'source': n_read, 'target': n_ai}, headers=auth_headers)
+
+        run = post_json(client, f'{PBASE}/{pip["id"]}/run', {}, headers=auth_headers).get_json()
+        assert run['status'] == 'success'
+        totals = {r['type']: r['total'] for r in run['node_results'][n_ai]['output_preview']}
+        assert totals == {'virement': 3000, 'retrait': 2000}

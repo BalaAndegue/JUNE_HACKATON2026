@@ -148,6 +148,7 @@ Chaque nœud passe sa sortie au nœud suivant. Cas particuliers :
 | `join` | reçoit **deux** entrées (gauche/droite selon l'ordre des edges) |
 | `merge` | concatène **toutes** ses entrées |
 | `sql_transform` / `sql_query` | exécute du vrai SQL via **SQLite en mémoire** sur `{input}` |
+| `ai_transform` | **génère du SQL via l'IA** (instruction NL) puis l'exécute sur l'entrée |
 | `split` | duplique son entrée vers chaque sortie |
 
 ### Suivi en temps réel
@@ -171,8 +172,10 @@ GET  /results/<run_id>/download?format=json  → … ou JSON
 POST /results/<run_id>/export                → crée un export persistant
 ```
 
-`_get_run_data()` prend la sortie du **dernier nœud** du graphe et la sérialise en
-CSV/JSON téléchargeable.
+À la fin d'un run, le **dataset complet du nœud terminal** est écrit sur disque
+(`uploads/results/<run_id>.json`). `_get_run_data()` lit ce fichier en priorité, si
+bien que l'export contient **toutes** les lignes — pas seulement l'aperçu. Le fichier
+est supprimé avec le run.
 
 ---
 
@@ -192,7 +195,7 @@ CSV/JSON téléchargeable.
 | **Input** | `csv_reader`, `json_reader` | ✅ lecture fichier disque |
 | **Input** | `sql_query`, `http_request` | ⚠️ datasource/réseau non branché → sortie vide + log |
 | **Transform** | `filter`, `map`, `aggregate`, `join`, `sort`, `dedup`, `sql_transform`, `validate` | ✅ |
-| **AI** | `ai_transform` | ⚠️ passe-through journalisé |
+| **AI** | `ai_transform` | ✅ génère du SQL (IA) puis l'exécute sur l'entrée |
 | **Output** | `file_export`, `sql_write`, `webhook_send`, `notification_send` | ⚠️ passe-through journalisé |
 | **Control** | `merge`, `split` | ✅ |
 | **Trigger** | `schedule_trigger` | n/a |
@@ -201,16 +204,14 @@ CSV/JSON téléchargeable.
 
 ## Limitations connues
 
-- **Export limité à l'aperçu** : le moteur ne stocke dans `node_results` que
-  `output_preview` (les **10 premières lignes**, plafond `preview_rows`). Donc
-  `GET /results/.../download` ne renvoie que ces 10 lignes, pas le dataset complet.
-  → Pour une vraie consolidation, il faudrait persister le dataset complet du nœud
-  terminal (sur disque ou en base) et faire pointer le download dessus.
+- ~~**Export limité à l'aperçu**~~ ✅ **Corrigé** : le dataset complet du nœud terminal
+  est désormais persisté (`uploads/results/<run_id>.json`) et l'export/download renvoie
+  toutes les lignes.
 - **Datasources externes** (`sql_query`, `http_request`) non connectées : elles
   renvoient une sortie vide avec un log d'avertissement plutôt que des données fictives.
   Le chemin **fichier → transforms → export** est, lui, 100 % réel.
-- **Sorties terminales** (`sql_write`, `webhook_send`, `notification_send`) et
-  `ai_transform` sont en passe-through journalisé (pas d'effet externe réel).
+- **Sorties terminales** (`sql_write`, `webhook_send`, `notification_send`) sont en
+  passe-through journalisé (pas d'effet externe réel).
 
 ---
 

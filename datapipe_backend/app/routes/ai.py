@@ -136,6 +136,61 @@ def _call_openrouter(system, messages, model=None, max_tokens=2048):
 
 
 
+def generate_sql(description, columns=None):
+    """Génère une requête SQL (référençant {input}) à partir d'une description NL.
+
+    Chaîne de priorité : OpenRouter → Claude → OpenAI → mock intelligent.
+    Réutilisable par l'endpoint /generate-transform ET par le nœud ai_transform
+    du moteur d'exécution.
+
+    Returns: (sql: str, model_used: str, used_mock: bool)
+    """
+    import re as _re
+    columns = columns or ['id', 'montant', 'devise', 'date_transaction', 'type', 'statut']
+    user_msg = (
+        f"Génère une requête SQL pour : \"{description}\". "
+        f"Colonnes disponibles : {', '.join(columns)}. "
+        "Utilise {input} pour référencer le dataset d'entrée. "
+        "Réponds avec UNIQUEMENT la requête SQL, sans explication."
+    )
+    system = "Tu es un expert SQL pour l'ETL bancaire."
+
+    sql = _call_openrouter(system=system, messages=[{'role': 'user', 'content': user_msg}])
+    if not sql:
+        sql = _call_claude(system=system, messages=[{'role': 'user', 'content': user_msg}])
+    if not sql:
+        sql = _call_openai([{'role': 'user', 'content': f"{system}\n{user_msg}"}])
+
+    used_mock = False
+    if not sql:
+        used_mock = True
+        sql_map = {
+            'somme': "SELECT SUM(montant) as total, COUNT(*) as nb FROM {input}",
+            'agreg': "SELECT STRFTIME('%Y-%m', date_transaction) as mois, SUM(montant) as total FROM {input} GROUP BY mois ORDER BY mois DESC",
+            'filtr': "SELECT * FROM {input} WHERE statut = 'traite' AND montant > 10000",
+            'anomal': "SELECT * FROM {input} WHERE montant > (SELECT AVG(montant) + 3 * SQRT(AVG(montant * montant) - AVG(montant)*AVG(montant)) FROM {input})",
+        }
+        desc_lower = description.lower()
+        sql = next((v for k, v in sql_map.items() if k in desc_lower),
+                   f"SELECT * FROM {{input}} -- TODO: implement: {description}")
+
+    # Nettoyage des éventuels blocs markdown
+    sql = _re.sub(r"```sql\s*", "", sql)
+    sql = _re.sub(r"```\s*", "", sql)
+    sql = sql.strip()
+
+    model_used = 'datapipe-analyst'
+    if not used_mock:
+        if current_app.config.get('OPENROUTER_API_KEY'):
+            model_used = current_app.config.get('OPENROUTER_MODEL', 'anthropic/claude-3.5-haiku')
+        elif current_app.config.get('ANTHROPIC_API_KEY'):
+            model_used = 'claude-3-5-haiku-20241022'
+        else:
+            model_used = 'gpt-4o-mini'
+
+    return sql, model_used, used_mock
+
+
 @ai_bp.route('/generate-transform', methods=['POST'])
 @jwt_required()
 def generate_transform():
@@ -148,54 +203,7 @@ def generate_transform():
     context = data.get('context', {})
     columns = context.get('columns', ['id', 'montant', 'devise', 'date_transaction', 'type', 'statut'])
 
-    prompt = f"""Tu es un expert SQL pour l'ETL bancaire. Génère une requête SQL pour :
-"{description}"
-
-Colonnes disponibles : {', '.join(columns)}
-Utilise {{input}} pour référencer le dataset d'entrée.
-Réponds avec UNIQUEMENT la requête SQL, sans explication."""
-
-    sql = _call_openrouter(
-        system="Tu es un expert SQL pour l'ETL bancaire.",
-        messages=[{'role': 'user', 'content': f"Génère une requête SQL pour : \"{description}\". Colonnes disponibles : {', '.join(columns)}. Utilise {{input}} pour référencer le dataset d'entrée. Réponds avec UNIQUEMENT la requête SQL, sans explication."}]
-    )
-
-    if not sql:
-        sql = _call_claude(
-            system="Tu es un expert SQL pour l'ETL bancaire.",
-            messages=[{'role': 'user', 'content': f"Génère une requête SQL pour : \"{description}\". Colonnes disponibles : {', '.join(columns)}. Utilise {{input}} pour référencer le dataset d'entrée. Réponds avec UNIQUEMENT la requête SQL, sans explication."}]
-        )
-
-    if not sql:
-        sql = _call_openai([{'role': 'user', 'content': prompt}])
-
-    used_mock = False
-    if not sql:
-        used_mock = True
-        sql_map = {
-            'somme': f"SELECT SUM(montant) as total, COUNT(*) as nb FROM {{input}}",
-            'agreg': f"SELECT STRFTIME('%Y-%m', date_transaction) as mois, SUM(montant) as total FROM {{input}} GROUP BY mois ORDER BY mois DESC",
-            'filtr': f"SELECT * FROM {{input}} WHERE statut = 'traite' AND montant > 10000",
-            'anomal': f"SELECT * FROM {{input}} WHERE montant > (SELECT AVG(montant) + 3 * SQRT(AVG(montant * montant) - AVG(montant)*AVG(montant)) FROM {{input}})",
-        }
-        desc_lower = description.lower()
-        sql = next((v for k, v in sql_map.items() if k in desc_lower),
-                   f"SELECT * FROM {{input}} -- TODO: implement: {description}")
-
-    # Clean potential markdown wrappers
-    import re
-    sql = re.sub(r"```sql\s*", "", sql)
-    sql = re.sub(r"```\s*", "", sql)
-    sql = sql.strip()
-
-    model_used = 'datapipe-analyst'
-    if not used_mock:
-        if current_app.config.get('OPENROUTER_API_KEY'):
-            model_used = current_app.config.get('OPENROUTER_MODEL', 'anthropic/claude-3.5-haiku')
-        elif current_app.config.get('ANTHROPIC_API_KEY'):
-            model_used = 'claude-3-5-haiku-20241022'
-        else:
-            model_used = 'gpt-4o-mini'
+    sql, model_used, used_mock = generate_sql(description, columns)
 
     return jsonify({
         'query': sql,

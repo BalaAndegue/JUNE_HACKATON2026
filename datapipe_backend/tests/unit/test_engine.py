@@ -153,6 +153,51 @@ class TestSqlTransform:
         assert res['node_results']['q']['status'] == 'error'
 
 
+class TestAiTransform:
+    def test_ai_transform_executes_generated_sql(self):
+        """ai_transform doit générer du SQL puis l'exécuter réellement sur l'entrée."""
+        nodes = [
+            FakeNode('r', 'json_reader', {'file_id': 'F'}),
+            FakeNode('ai', 'ai_transform', {'instruction': 'somme des montants par région'}),
+        ]
+        captured = {}
+
+        def fake_generator(instruction, columns):
+            captured['instruction'] = instruction
+            captured['columns'] = columns
+            return 'SELECT region, SUM(montant) as total FROM {input} GROUP BY region'
+
+        res = execute_pipeline(nodes, [FakeEdge('r', 'ai')],
+                               file_loader=lambda fid: TX, sql_generator=fake_generator)
+        assert res['status'] == 'success'
+        rows = {r['region']: r['total'] for r in res['node_results']['ai']['output_preview']}
+        assert rows == {'Abidjan': 90500, 'Bouake': 120050}
+        assert captured['instruction'] == 'somme des montants par région'
+        assert 'montant' in captured['columns']
+
+    def test_ai_transform_passthrough_without_generator(self):
+        nodes = [
+            FakeNode('r', 'json_reader', {'file_id': 'F'}),
+            FakeNode('ai', 'ai_transform', {'instruction': 'somme'}),
+        ]
+        res = execute_pipeline(nodes, [FakeEdge('r', 'ai')], file_loader=lambda fid: TX)
+        assert res['node_results']['ai']['rows_output'] == len(TX)
+
+    def test_ai_transform_failure_falls_back_to_passthrough(self):
+        nodes = [
+            FakeNode('r', 'json_reader', {'file_id': 'F'}),
+            FakeNode('ai', 'ai_transform', {'instruction': 'x'}),
+        ]
+
+        def boom(instruction, columns):
+            raise RuntimeError('API down')
+
+        res = execute_pipeline(nodes, [FakeEdge('r', 'ai')],
+                               file_loader=lambda fid: TX, sql_generator=boom)
+        assert res['status'] == 'success'  # l'IA ne fait jamais échouer le run
+        assert res['node_results']['ai']['rows_output'] == len(TX)
+
+
 class TestMerge:
     def test_merge_concatenates(self):
         nodes = [

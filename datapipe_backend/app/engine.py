@@ -312,7 +312,7 @@ def _validate(rows, cfg, node, logs):
 
 # ─────────────────────────────── Dispatch ────────────────────────────────────
 
-def _execute_node(node, inputs, file_loader, logs):
+def _execute_node(node, inputs, file_loader, logs, sql_generator=None):
     t = node.type_slug
     cfg = node.config or {}
     first = inputs[0] if inputs else []
@@ -356,9 +356,25 @@ def _execute_node(node, inputs, file_loader, logs):
     if t == 'split':
         return list(first)
     if t == 'ai_transform':
+        instruction = cfg.get('instruction') or cfg.get('prompt')
+        if not instruction or sql_generator is None:
+            logs.append({'level': 'info', 'node_id': node.id,
+                         'message': f'{node.label or t} : passage IA (données transmises sans modification)'})
+            return list(first)
+        columns = list(first[0].keys()) if first else []
+        try:
+            sql = sql_generator(instruction, columns)
+        except Exception as ex:  # noqa: BLE001 — l'IA ne doit jamais faire échouer le run
+            logs.append({'level': 'warning', 'node_id': node.id,
+                         'message': f'{node.label or t} : IA indisponible ({ex}), données transmises'})
+            return list(first)
+        if not sql:
+            logs.append({'level': 'warning', 'node_id': node.id,
+                         'message': f'{node.label or t} : aucune requête générée, données transmises'})
+            return list(first)
         logs.append({'level': 'info', 'node_id': node.id,
-                     'message': f'{node.label or t} : passage IA (données transmises sans modification)'})
-        return list(first)
+                     'message': f'{node.label or t} : IA → {sql}'})
+        return _sql(sql, first)
     if t == 'file_export':
         fmt = cfg.get('format', 'csv')
         logs.append({'level': 'info', 'node_id': node.id,
@@ -377,7 +393,7 @@ def _execute_node(node, inputs, file_loader, logs):
     return list(first)
 
 
-def execute_pipeline(nodes, edges, file_loader=None, preview_rows=10):
+def execute_pipeline(nodes, edges, file_loader=None, sql_generator=None, preview_rows=10):
     """Exécute le pipeline et retourne le détail par nœud.
 
     Returns:
@@ -407,7 +423,7 @@ def execute_pipeline(nodes, edges, file_loader=None, preview_rows=10):
         inputs = [outputs.get(src, []) for src in incoming[node.id]]
         in_rows = sum(len(i) for i in inputs)
         try:
-            data = _execute_node(node, inputs, file_loader, logs)
+            data = _execute_node(node, inputs, file_loader, logs, sql_generator)
             outputs[node.id] = data
             duration = int((time.time() - started) * 1000)
             node_results[node.id] = {

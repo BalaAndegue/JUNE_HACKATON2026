@@ -109,13 +109,80 @@ Des tests d'intégration robustes ont été ajoutés dans `tests/integration/tes
 
 ### Résultat de la suite de tests (`pytest`) :
 ```bash
-====================== 220 passed, 160 warnings in 18.78s ======================
+====================== 267 passed, 187 warnings in 13.43s ======================
 ```
-Les 220 tests du projet (incluant l'authentification, les workspaces, les runs et le module IA) passent à **100% avec succès**.
+Les 267 tests du projet (incluant l'authentification, les workspaces, les runs, le module IA, le **moteur d'exécution ETL réel** et la **suite Fichiers/Datasources**) passent à **100% avec succès**.
+
+> Couverture renforcée : `app/routes/files.py` est passé de **40 % à 92 %** grâce à la
+> nouvelle suite `tests/integration/test_files.py` (upload CSV/JSON, preview, analyze,
+> suppression, CRUD datasources) — le chemin d'upload, critique pour la démo, est
+> désormais largement sécurisé.
 
 ---
 
-## 6. Prochaines Étapes pour la Démo Hackathon
+## 6. Moteur d'Exécution ETL Réel [NOUVEAU]
+
+Le module IA génère des graphes de pipeline (`nodes` + `edges`). Pour que ces
+pipelines produisent de **vrais résultats** — et non plus des données simulées —, un
+moteur d'exécution ETL a été ajouté dans **`app/engine.py`**. C'est ce qui répond
+concrètement au problème du thème 9 : consolider et transformer réellement des
+fichiers de données.
+
+### 6.1. Principe
+- **Tri topologique** du graphe (DAG) avec détection de cycle (`CycleError`).
+- Exécution nœud par nœud : chaque nœud reçoit les sorties de ses parents et produit
+  un dataset réel (liste de lignes) transmis à ses enfants.
+- Coercition automatique des valeurs CSV en nombres pour que les filtres numériques
+  et les agrégations fonctionnent.
+
+### 6.2. Nœuds réellement exécutés
+| Catégorie | Nœuds | Statut |
+|---|---|---|
+| Input | `csv_reader`, `json_reader` | ✅ lecture fichier disque |
+| Transform | `filter`, `map`, `aggregate`, `join`, `sort`, `dedup`, `sql_transform`, `validate` | ✅ |
+| Control | `merge`, `split` | ✅ |
+| AI | `ai_transform` | ✅ génère du SQL (IA) puis l'exécute sur l'entrée |
+| Input externe | `sql_query`, `http_request` | ⚠️ datasource/réseau non branché |
+| Output | `file_export`, `sql_write`, `webhook_send`, `notification_send` | ⚠️ passe-through journalisé |
+
+`sql_transform` / `sql_query` exécutent du vrai SQL via **SQLite en mémoire** sur la
+table `{input}` (mots-clés destructeurs bloqués).
+
+### 6.2 bis. Nœud IA branché sur la génération SQL (bonus démo +3 pts)
+
+Le nœud `ai_transform` n'est plus un simple passe-through. Lors de l'exécution :
+1. Il récupère l'instruction en langage naturel (`config.instruction`) et les colonnes
+   du dataset d'entrée.
+2. Il appelle la fonction `generate_sql()` (factorisée depuis `/ai/generate-transform`,
+   même chaîne OpenRouter → Claude → OpenAI → mock).
+3. La requête SQL générée est **exécutée réellement** sur les données via SQLite.
+
+Le générateur est injecté dans le moteur (`execute_pipeline(..., sql_generator=...)`),
+ce qui garde `engine.py` découplé de Flask/IA et testable hors-ligne. Si l'IA est
+indisponible, le nœud se rabat proprement sur un passe-through (le run ne plante jamais).
+
+### 6.3. Persistance des résultats
+- L'ancien `_simulate_run` (qui fabriquait `100 + i*37` lignes fictives) est remplacé
+  par `_execute_run`, qui lance le moteur, persiste les logs par nœud et les
+  `node_results`.
+- Le **dataset complet** du nœud terminal est écrit sur disque
+  (`uploads/results/<run_id>.json`) afin que `GET /results/<run_id>/download` renvoie
+  **toutes** les lignes (et non l'aperçu limité à 10).
+- Les endpoints `POST /transform/sql/execute` et `POST /transform/preview` exécutent
+  désormais réellement le SQL sur les données fournies.
+
+### 6.4. Validation
+- `tests/unit/test_engine.py` : tests unitaires des transformations (filter,
+  aggregate, join, sort, dedup, SQL, merge, détection de cycle).
+- `tests/integration/test_runs.py` : test bout-en-bout
+  (upload CSV → filter → aggregate → export complet).
+
+Voir le détail complet du parcours dans **`docs/WORKFLOW.md`**.
+
+---
+
+## 7. Prochaines Étapes pour la Démo Hackathon
 
 1. **Configuration Staging/Prod** : Renseigner les variables `ANTHROPIC_API_KEY` dans le fichier `.env` sur le serveur de démonstration si les appels réels à Claude sont requis.
 2. **Interface Graphique** : L'équipe Frontend (Jeff) peut consommer directement `POST /api/v1/ai/generate-pipeline` et passer le tableau `nodes` et `edges` directement à l'état React Flow pour un affichage immédiat à l'écran.
+3. **Démo complète** : enchaîner IA → graphe React Flow → `POST /pipelines/<id>/run` (moteur ETL réel) → `GET /results/<run_id>/download` pour montrer le cycle complet « prompt en français → résultat téléchargeable ».
