@@ -84,6 +84,31 @@ jobs:
             # On définit le nom de l'image en minuscules pour le VPS aussi
             IMAGE_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
             
+            # 1. Vérification de la réactivité de Docker et redémarrage si nécessaire
+            echo "Vérification de l'état du service Docker..."
+            if ! timeout 15 docker ps > /dev/null; then
+              echo "Docker ne répond pas. Redémarrage du service..."
+              sudo systemctl restart docker || systemctl restart docker
+              sleep 5
+            fi
+
+            # 2. Nettoyage de l'espace disque et des conteneurs obsolètes
+            echo "Arrêt et suppression de l'ancien conteneur si existant..."
+            docker stop datapipe_backend || true
+            docker rm datapipe_backend || true
+            
+            echo "Nettoyage des conteneurs arrêtés et des réseaux inutilisés..."
+            docker system prune -f
+            
+            echo "Nettoyage des images Docker inutilisées pour libérer de l'espace..."
+            docker image prune -a -f
+            
+            # 3. Affichage des ressources système
+            echo "Espace disque disponible :"
+            df -h
+            echo "Mémoire RAM disponible :"
+            free -m
+
             # S'assurer que le dossier existe
             mkdir -p ~/JUNE_HACKATON2026
             cd ~/JUNE_HACKATON2026
@@ -109,14 +134,17 @@ jobs:
               datapipe_uploads:' > docker-compose.yml
             
             # Connexion au registre sur le VPS pour avoir le droit de pull
+            echo "Connexion au registre GHCR..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # On passe la variable DOCKER_IMAGE directement à docker compose
-            echo "Téléchargement de la nouvelle image et redémarrage..."
+            echo "Téléchargement de la nouvelle image..."
             DOCKER_IMAGE=${{ env.REGISTRY }}/$IMAGE_LOWER:latest docker compose pull
+            
+            echo "Démarrage de l'application..."
             DOCKER_IMAGE=${{ env.REGISTRY }}/$IMAGE_LOWER:latest docker compose up -d
             
-            # Nettoyage des anciennes images
+            echo "Nettoyage final des images inutilisées..."
             docker image prune -f
             
             echo "Déploiement terminé !"
