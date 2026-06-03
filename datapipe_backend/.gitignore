@@ -1,12 +1,44 @@
+# Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Environments
+.venv/
+venv/
+.venv_test/
+
+# Database & storage
 *.db
 *.sqlite3
 instance/
 uploads/
+
+# Environment variables
 .env
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
+.env.local
+.env.*.local
+
+# Test & coverage
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Guide PDF & extracted text (local reference docs)
+*.pdf
+DataPipe_Guide_Hackathon_JUIN2026.txt
+Guide_Officiel_du_Hackathon_J_U_I_N_2026_Edition_Cursor_V2_1.txt

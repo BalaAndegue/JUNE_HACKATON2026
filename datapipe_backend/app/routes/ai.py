@@ -11,9 +11,10 @@ ai_bp = Blueprint('ai', __name__)
 AI_SESSIONS = {}
 
 AI_MODELS = [
-    {'id': 'datapipe-analyst', 'name': 'DataPipe Analyst', 'provider': 'internal', 'description': 'Optimized for ETL and data analysis tasks', 'max_tokens': 8192, 'available': True},
-    {'id': 'claude-3-5-haiku-20241022', 'name': 'Claude 3.5 Haiku', 'provider': 'anthropic', 'description': 'Most capable and fast Anthropic model', 'max_tokens': 2048, 'available': True},
-    {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini', 'provider': 'openai', 'description': 'Fast and cost-effective', 'max_tokens': 16384, 'available': True},
+    {'id': 'datapipe-analyst', 'name': 'DataPipe Analyst', 'provider': 'internal', 'description': 'Moteur NLP local — fonctionne sans internet ni clé API', 'max_tokens': 8192, 'available': True},
+    {'id': 'anthropic/claude-3.5-haiku', 'name': 'Claude 3.5 Haiku (via OpenRouter)', 'provider': 'openrouter', 'description': 'Claude 3.5 Haiku via OpenRouter — provider prioritaire configuré', 'max_tokens': 8192, 'available': True},
+    {'id': 'claude-3-5-haiku-20241022', 'name': 'Claude 3.5 Haiku (direct)', 'provider': 'anthropic', 'description': 'Anthropic Claude direct — fallback si OpenRouter indisponible', 'max_tokens': 2048, 'available': True},
+    {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini', 'provider': 'openai', 'description': 'Fast and cost-effective — fallback secondaire', 'max_tokens': 16384, 'available': True},
     {'id': 'gpt-4o', 'name': 'GPT-4o', 'provider': 'openai', 'description': 'Most capable OpenAI model', 'max_tokens': 128000, 'available': True},
 ]
 
@@ -189,7 +190,12 @@ Réponds avec UNIQUEMENT la requête SQL, sans explication."""
 
     model_used = 'datapipe-analyst'
     if not used_mock:
-        model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
+        if current_app.config.get('OPENROUTER_API_KEY'):
+            model_used = current_app.config.get('OPENROUTER_MODEL', 'anthropic/claude-3.5-haiku')
+        elif current_app.config.get('ANTHROPIC_API_KEY'):
+            model_used = 'claude-3-5-haiku-20241022'
+        else:
+            model_used = 'gpt-4o-mini'
 
     return jsonify({
         'query': sql,
@@ -826,7 +832,24 @@ def generate_schema():
 @ai_bp.route('/models', methods=['GET'])
 @jwt_required()
 def list_models():
-    return jsonify({'models': AI_MODELS})
+    # Enrich models with real-time availability based on configured keys
+    enriched = []
+    for m in AI_MODELS:
+        entry = dict(m)
+        if m['provider'] == 'openrouter':
+            entry['available'] = bool(current_app.config.get('OPENROUTER_API_KEY'))
+            entry['active_provider'] = entry['available']
+        elif m['provider'] == 'anthropic':
+            entry['available'] = bool(current_app.config.get('ANTHROPIC_API_KEY'))
+        elif m['provider'] == 'openai':
+            entry['available'] = bool(current_app.config.get('OPENAI_API_KEY'))
+        else:
+            entry['available'] = True  # internal mock always available
+        enriched.append(entry)
+    active_provider = 'openrouter' if current_app.config.get('OPENROUTER_API_KEY') else \
+                      'anthropic' if current_app.config.get('ANTHROPIC_API_KEY') else \
+                      'openai' if current_app.config.get('OPENAI_API_KEY') else 'internal'
+    return jsonify({'models': enriched, 'active_provider': active_provider})
 
 
 @ai_bp.route('/chat', methods=['POST'])
