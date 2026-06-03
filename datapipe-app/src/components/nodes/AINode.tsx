@@ -18,7 +18,7 @@ export const AITransformNode = memo((props: NodeProps) => {
             {cfg.prompt.slice(0, 60)}{cfg.prompt.length > 60 ? '…' : ''}
           </span>
           {cfg.generated_code && (
-            <div className="flex items-center gap-1 text-[9px] text-gray-600">
+            <div className="flex items-center gap-1 text-[9px] text-slate-500">
               <Code2 className="h-2.5 w-2.5" />
               Code généré
             </div>
@@ -28,7 +28,7 @@ export const AITransformNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-gray-600 italic">Décrivez la transformation en français…</span>
+        <span className="text-slate-500 italic">Décrivez la transformation en français…</span>
       )}
     </BaseNode>
   )

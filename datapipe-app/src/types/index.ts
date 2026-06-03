@@ -83,6 +83,7 @@ export interface Pipeline {
   last_run_at?: string
   last_run_status?: RunStatus
   version?: number
+  created_at?: string
   updated_at?: string
   nodes?: FlowNode[]
   edges?: FlowEdge[]

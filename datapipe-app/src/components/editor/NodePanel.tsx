@@ -72,12 +72,12 @@ export function NodePanel({ pipelineId }: NodePanelProps) {
   }
 
   return (
-    <aside className="flex h-full w-55 flex-col border-r border-[#1e1e1e] bg-[#0a0a0a]">
+    <aside className="flex h-full w-55 flex-col border-r border-[#e6e8ec] bg-[#f4f6f9]">
       {/* Header */}
-      <div className="border-b border-[#1e1e1e] p-3">
+      <div className="border-b border-[#e6e8ec] p-3">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-700">Nœuds</p>
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-600" />
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <Input className="h-7 pl-7 text-xs" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
@@ -92,7 +92,7 @@ export function NodePanel({ pipelineId }: NodePanelProps) {
               {grouped[cat].map((type) => (
                 <div
                   key={type.slug}
-                  className="group flex items-center gap-2.5 rounded-lg px-2 py-2 cursor-grab transition-colors hover:bg-[#141414] active:cursor-grabbing"
+                  className="group flex items-center gap-2.5 rounded-lg px-2 py-2 cursor-grab transition-colors hover:bg-[#ffffff] active:cursor-grabbing"
                   draggable
                   onDragStart={(e) => handleDragStart(e, type)}
                   onDoubleClick={() => handleDoubleClick(type)}
@@ -108,7 +108,7 @@ export function NodePanel({ pipelineId }: NodePanelProps) {
                     {type.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-xs font-medium text-gray-400 group-hover:text-gray-200 transition-colors">
+                    <p className="truncate text-xs font-medium text-slate-600 group-hover:text-slate-800 transition-colors">
                       {type.label}
                     </p>
                     <p className="truncate text-[10px] text-gray-700">{type.description}</p>
@@ -119,7 +119,7 @@ export function NodePanel({ pipelineId }: NodePanelProps) {
           ))}
 
           {filtered.length === 0 && (
-            <p className="px-3 py-6 text-center text-xs text-gray-600">Aucun résultat</p>
+            <p className="px-3 py-6 text-center text-xs text-slate-500">Aucun résultat</p>
           )}
         </div>
       </ScrollArea>

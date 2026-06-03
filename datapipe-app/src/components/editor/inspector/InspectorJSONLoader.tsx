@@ -53,18 +53,18 @@ export function InspectorJSONLoader({ config, files, onChange }: Props) {
             value={config.url ?? ''}
             onChange={(e) => update({ url: e.target.value })}
           />
-          <p className="text-[10px] text-gray-600">Supporte GET avec réponse JSON</p>
+          <p className="text-[10px] text-slate-500">Supporte GET avec réponse JSON</p>
         </div>
       )}
 
       <div className="space-y-1.5">
-        <Label>Chemin de la clé racine <span className="text-gray-600">(optionnel)</span></Label>
+        <Label>Chemin de la clé racine <span className="text-slate-500">(optionnel)</span></Label>
         <Input
           placeholder="ex: data.items"
           value={config.root_path ?? ''}
           onChange={(e) => update({ root_path: e.target.value })}
         />
-        <p className="text-[10px] text-gray-600">
+        <p className="text-[10px] text-slate-500">
           Chemin pointé vers le tableau de données. Vide = racine.
         </p>
       </div>

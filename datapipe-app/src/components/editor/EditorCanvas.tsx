@@ -25,6 +25,7 @@ import { TablePreviewNode, ChartNode, ExportNode } from '@/components/nodes/Outp
 import { GenericNode } from '@/components/nodes/GenericNode'
 
 const nodeTypes: NodeTypes = {
+  // Frontend slugs
   csv_import: CSVImportNode,
   json_loader: JSONLoaderNode,
   sql_query: SQLSourceNode,
@@ -37,6 +38,18 @@ const nodeTypes: NodeTypes = {
   table_preview: TablePreviewNode,
   chart: ChartNode,
   export: ExportNode,
+  // Backend slugs (aliases → closest styled component) so real pipelines render
+  csv_reader: CSVImportNode,
+  json_reader: JSONLoaderNode,
+  map: RenameNode,
+  dedup: CleanNode,
+  validate: CleanNode,
+  sort: FilterNode,
+  sql_transform: AITransformNode,
+  mask_pii: CleanNode,
+  detect_anomalies: AITransformNode,
+  quality_report: AggregateNode,
+  file_export: ExportNode,
   default: GenericNode,
 }
 
@@ -126,7 +139,7 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
   return (
     <div
       className="h-full w-full"
-      style={{ background: '#06060a' }}
+      style={{ background: '#f4f6f9' }}
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
     >
@@ -141,16 +154,16 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
         fitView
         fitViewOptions={{ padding: 0.3 }}
         defaultEdgeOptions={{
-          style: { stroke: '#2a2a2a', strokeWidth: 2 },
-          animated: false,
+          style: { stroke: '#c2c9d4', strokeWidth: 2 },
+          animated: true,
         }}
         proOptions={{ hideAttribution: true }}
         // Empêche le scroll de la page quand la souris est sur le canvas
         preventScrolling
         panOnScroll={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="rgba(255,255,255,0.25)" />
-        <MiniMap className="border-[#2a2a2a]! bg-[#0a0a0a]!" nodeColor="#1e1e1e" maskColor="rgba(0,0,0,0.5)" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="#cbd2dc" />
+        <MiniMap className="border-[#d7dbe2]! bg-white!" nodeColor="#cbd2dc" maskColor="rgba(15,23,42,0.06)" />
         {/* Barre de contrôles custom — Panel React Flow pour rester dans le canvas */}
         <Panel position="bottom-center" style={{ margin: 0, width: '100%', pointerEvents: 'none' }}>
           <CanvasControls pipelineId={pipelineId} />

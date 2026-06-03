@@ -123,12 +123,13 @@ function useInView(threshold = 0.12) {
   return { ref, visible }
 }
 
-function Reveal({ children, delay = 0, className = '' }: {
-  children: React.ReactNode; delay?: number; className?: string
+function Reveal({ children, delay = 0, className = '', style }: {
+  children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties
 }) {
   const { ref, visible } = useInView()
   return (
     <div ref={ref} className={className} style={{
+      ...style,
       opacity: visible ? 1 : 0,
       transform: visible ? 'none' : 'translateY(24px)',
       transition: `opacity 0.65s ease ${delay}ms, transform 0.65s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
@@ -227,11 +228,11 @@ function AIAnimatedCard() {
     <div
       ref={ref}
       className="relative overflow-hidden rounded-2xl"
-      style={{ background: '#0e0e14', border: '1px solid rgba(255,109,53,0.18)' }}
+      style={{ background: '#f4f6f9', border: '1px solid rgba(255,109,53,0.18)' }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 border-b px-4 py-3"
-        style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(255,109,53,0.06)' }}>
+        style={{ borderColor: 'rgba(15,23,42,0.07)', background: 'rgba(255,109,53,0.06)' }}>
         <Sparkles className="h-3.5 w-3.5 text-[#ff6d35]" />
         <span className="text-xs font-semibold text-[#ff6d35]">IA Transform</span>
         <span className="ml-auto text-[10px] text-gray-700">Claude Sonnet 4.6</span>
@@ -240,7 +241,7 @@ function AIAnimatedCard() {
       {/* Prompt area */}
       <div className="px-5 py-4 space-y-1">
         <p className="text-[10px] uppercase tracking-widest text-gray-700 mb-2">Prompt</p>
-        <p className="text-sm text-gray-300 leading-relaxed min-h-[3em]">
+        <p className="text-sm text-slate-700 leading-relaxed min-h-[3em]">
           {prompt}
           {phase === 'typing' && (
             <span className="ml-0.5 inline-block h-[1em] w-[2px] rounded-full bg-gray-400 align-middle"
@@ -251,9 +252,9 @@ function AIAnimatedCard() {
 
       {/* Code area */}
       <div className="mx-4 mb-4 rounded-xl overflow-hidden"
-        style={{ background: '#07070b', border: '1px solid rgba(255,255,255,0.06)', minHeight: 130 }}>
+        style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.07)', minHeight: 130 }}>
         <div className="flex items-center gap-1.5 border-b px-3 py-2"
-          style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+          style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
           <div className="h-2 w-2 rounded-full bg-red-500/60" />
           <div className="h-2 w-2 rounded-full bg-amber-500/60" />
           <div className="h-2 w-2 rounded-full bg-emerald-500/60" />
@@ -267,8 +268,8 @@ function AIAnimatedCard() {
                   key={i}
                   style={{ animation: `code-line-in 0.25s cubic-bezier(0.16,1,0.3,1) both` }}
                 >
-                  <span className="text-gray-600 select-none mr-3">{i + 1}</span>
-                  <span style={{ color: line.includes('df[') ? '#79c0ff' : line.includes('"') ? '#a5d6ff' : '#e5e5e5' }}>
+                  <span className="text-slate-500 select-none mr-3">{i + 1}</span>
+                  <span style={{ color: line.includes('df[') ? '#79c0ff' : line.includes('"') ? '#a5d6ff' : '#1c2230' }}>
                     {line}
                   </span>
                 </div>
@@ -309,7 +310,7 @@ function BentoGrid() {
     <section className="mx-auto max-w-5xl px-6 py-24">
       <Reveal className="mb-12 text-center">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ff6d35]">Tout dans un outil</p>
-        <h2 className="mt-3 text-3xl font-light text-white md:text-4xl">Conçu pour aller vite.</h2>
+        <h2 className="mt-3 text-3xl font-light text-slate-900 md:text-4xl">Conçu pour aller vite.</h2>
       </Reveal>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -317,11 +318,11 @@ function BentoGrid() {
         <Reveal delay={0} className="col-span-2 row-span-2">
           <TiltCard
             className="h-full min-h-[280px] overflow-hidden rounded-2xl p-6"
-            style={{ background: '#0f0f13', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ background: '#eceff3', border: '1px solid rgba(15,23,42,0.07)' }}
           >
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-700 mb-3">Canvas visuel</p>
-            <h3 className="text-lg font-bold text-white mb-1">Glisser-déposer</h3>
-            <p className="text-sm text-gray-500 mb-6">Construisez en temps réel, voyez l&apos;exécution se propager.</p>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Glisser-déposer</h3>
+            <p className="text-sm text-slate-500 mb-6">Construisez en temps réel, voyez l&apos;exécution se propager.</p>
             <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 space-y-2">
               {[
                 { label: 'CSV Import', color: '#00e5a0', sub: '1 247 lignes' },
@@ -329,13 +330,13 @@ function BentoGrid() {
                 { label: 'Export',     color: '#ff6d35', sub: 'rapport.csv' },
               ].map((n, i) => (
                 <div key={i}>
-                  <div className="flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-colors hover:bg-white/4"
+                  <div className="flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-colors hover:bg-slate-900/[0.04]"
                     style={{ borderColor: n.color + '30', background: n.color + '0a' }}>
                     <div className="h-1.5 w-1.5 rounded-full" style={{ background: n.color }} />
                     <span className="text-xs font-semibold" style={{ color: n.color }}>{n.label}</span>
                     <span className="ml-auto text-[10px] text-gray-700 font-mono">{n.sub}</span>
                   </div>
-                  {i < 2 && <div className="ml-5 h-3 w-px bg-[#2a2a2a]" />}
+                  {i < 2 && <div className="ml-5 h-3 w-px bg-[#d7dbe2]" />}
                 </div>
               ))}
             </div>
@@ -346,15 +347,15 @@ function BentoGrid() {
         <Reveal delay={60} className="col-span-2 md:col-span-1">
           <TiltCard
             className="overflow-hidden rounded-2xl p-5"
-            style={{ background: '#0f0f13', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ background: '#eceff3', border: '1px solid rgba(15,23,42,0.07)' }}
           >
             <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl"
               style={{ background: 'rgba(255,109,53,0.12)', border: '1px solid rgba(255,109,53,0.2)' }}>
               <Sparkles className="h-4 w-4 text-[#ff6d35]" />
             </div>
-            <h3 className="text-sm font-bold text-white">IA Claude</h3>
-            <p className="mt-1 text-xs text-gray-600">Décrivez, le code est généré.</p>
-            <div className="mt-3 rounded-lg p-2.5" style={{ background: '#0a0a0e', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <h3 className="text-sm font-bold text-slate-900">IA Claude</h3>
+            <p className="mt-1 text-xs text-slate-500">Décrivez, le code est généré.</p>
+            <div className="mt-3 rounded-lg p-2.5" style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.06)' }}>
               <p className="text-[9px] text-[#79c0ff] font-mono">df[&quot;tranche&quot;] = pd.cut(...</p>
             </div>
           </TiltCard>
@@ -364,14 +365,14 @@ function BentoGrid() {
         <Reveal delay={100} className="col-span-2 md:col-span-1">
           <TiltCard
             className="overflow-hidden rounded-2xl p-5"
-            style={{ background: '#0f0f13', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ background: '#eceff3', border: '1px solid rgba(15,23,42,0.07)' }}
           >
             <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl"
               style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>
               <Zap className="h-4 w-4 text-emerald-400" fill="currentColor" />
             </div>
-            <p className="text-2xl font-black text-white">0.9s</p>
-            <p className="text-xs text-gray-600 mt-0.5">Exécution moyenne</p>
+            <p className="text-2xl font-black text-slate-900">0.9s</p>
+            <p className="text-xs text-slate-500 mt-0.5">Exécution moyenne</p>
             <div className="mt-3 flex items-end gap-1 h-8">
               {[90,70,85,60,95,80,75,88,65,92].map((h, i) => (
                 <div key={i} className="flex-1 rounded-t-sm transition-all duration-200 hover:opacity-100"
@@ -385,14 +386,14 @@ function BentoGrid() {
         <Reveal delay={140} className="col-span-2 md:col-span-1">
           <TiltCard
             className="overflow-hidden rounded-2xl p-5"
-            style={{ background: '#0f0f13', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ background: '#eceff3', border: '1px solid rgba(15,23,42,0.07)' }}
           >
             <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl"
               style={{ background: 'rgba(255,109,53,0.12)', border: '1px solid rgba(255,109,53,0.2)' }}>
               <LayoutGrid className="h-4 w-4 text-[#ff6d35]" />
             </div>
-            <p className="text-2xl font-black text-white">12</p>
-            <p className="text-xs text-gray-600 mt-0.5">Types de nœuds</p>
+            <p className="text-2xl font-black text-slate-900">12</p>
+            <p className="text-xs text-slate-500 mt-0.5">Types de nœuds</p>
             <div className="mt-3 flex flex-wrap gap-1">
               {['#00e5a0','#00e5a0','#00e5a0','#ff6d35','#ff6d35','#ff6d35','#ff6d35','#ff6d35','#ff6d35','#ff6d35','#ff6d35','#ff6d35'].map((c, i) => (
                 <div key={i} className="h-3 w-3 rounded-sm transition-all duration-150 hover:scale-125 cursor-default"
@@ -406,7 +407,7 @@ function BentoGrid() {
         <Reveal delay={180} className="col-span-2 md:col-span-1">
           <TiltCard
             className="overflow-hidden rounded-2xl p-5"
-            style={{ background: '#0f0f13', border: '1px solid rgba(255,255,255,0.07)' }}
+            style={{ background: '#eceff3', border: '1px solid rgba(15,23,42,0.07)' }}
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl"
@@ -415,7 +416,7 @@ function BentoGrid() {
               </div>
               <span className="text-[10px] text-gray-700">Bar · Line · Pie · Area</span>
             </div>
-            <h3 className="text-sm font-bold text-white">Graphiques live</h3>
+            <h3 className="text-sm font-bold text-slate-900">Graphiques live</h3>
             <div className="mt-3 flex items-end gap-1.5 h-10">
               {[40,65,50,80,55,90,70].map((h, i) => (
                 <div key={i} className="flex-1 rounded-t-sm transition-all duration-200 hover:opacity-100"
@@ -434,7 +435,7 @@ function BentoGrid() {
 // ─────────────────────────────────────────────────────────────────────────
 function AISection() {
   return (
-    <section className="border-t py-24" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+    <section className="border-t py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <div className="flex flex-col gap-12 md:flex-row md:items-start md:gap-16">
           {/* Left — big animated card */}
@@ -448,11 +449,11 @@ function AISection() {
               style={{ background: 'rgba(255,109,53,0.12)', border: '1px solid rgba(255,109,53,0.25)', color: '#ff6d35' }}>
               IA
             </span>
-            <h3 className="text-2xl font-light leading-snug text-white md:text-3xl">
+            <h3 className="text-2xl font-light leading-snug text-slate-900 md:text-3xl">
               Décrivez en français.<br />
               L&apos;IA écrit le code.
             </h3>
-            <p className="text-base text-gray-500 leading-relaxed">
+            <p className="text-base text-slate-500 leading-relaxed">
               Claude Sonnet analyse vos colonnes, comprend votre intention, et génère une transformation Python ou SQL — affichée, modifiable, exécutable en un clic.
             </p>
             <ul className="space-y-2.5">
@@ -461,7 +462,7 @@ function AISection() {
                 'Code généré visible et toujours éditable',
                 'Exécution immédiate sur vos données réelles',
               ].map((pt, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
+                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#ff6d35]" />
                   {pt}
                 </li>
@@ -489,9 +490,9 @@ function HeroCanvas() {
   useEffect(() => { const t = setTimeout(() => setOn(true), 300); return () => clearTimeout(t) }, [])
 
   return (
-    <div className="relative h-[230px] w-full overflow-hidden rounded-b-xl" style={{ background: '#08080c' }}>
+    <div className="relative h-[230px] w-full overflow-hidden rounded-b-xl" style={{ background: '#f4f6f9' }}>
       <div className="absolute inset-0" style={{
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(circle, rgba(15,23,42,0.07) 1px, transparent 1px)',
         backgroundSize: '22px 22px',
       }} />
       <svg className="absolute inset-0 h-full w-full" style={{ overflow: 'visible' }}>
@@ -508,16 +509,16 @@ function HeroCanvas() {
       {HERO_NODES.map((n, i) => (
         <div key={i} className="absolute rounded-xl border-[1.5px] overflow-hidden group cursor-default transition-all duration-200 hover:scale-105"
           style={{
-            left: n.x, top: 72, width: 172, borderColor: n.c + '55', background: '#0f0f14',
+            left: n.x, top: 72, width: 172, borderColor: n.c + '55', background: '#f4f6f9',
             opacity: on ? 1 : 0, transform: on ? 'none' : 'translateY(12px)',
             transition: `opacity 0.5s ease ${i * 120 + 200}ms, transform 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 120 + 200}ms`,
           }}
         >
           <div className="px-3 py-1.5 text-[10px] font-bold transition-colors"
             style={{ background: n.c + '18', color: n.c }}>{n.label}</div>
-          <div className="px-3 py-1.5 text-[10px] text-gray-600 font-mono">{n.sub}</div>
-          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#08080c]" style={{ borderColor: n.c }} />
-          <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#08080c]" style={{ borderColor: n.c }} />
+          <div className="px-3 py-1.5 text-[10px] text-slate-500 font-mono">{n.sub}</div>
+          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#f4f6f9]" style={{ borderColor: n.c }} />
+          <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#f4f6f9]" style={{ borderColor: n.c }} />
         </div>
       ))}
       <div className="absolute bottom-4 right-5 flex items-center gap-2 rounded-full border px-3 py-1.5"
@@ -571,22 +572,22 @@ function ActorsSection() {
   const pick = useCallback((i: number) => { if (i === active) return; setActive(i); setKey(k => k + 1) }, [active])
 
   return (
-    <section className="border-t py-28" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+    <section className="border-t py-28" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <Reveal className="mb-16">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff6d35] mb-3">Cas d&apos;usage</p>
-          <h2 className="text-4xl font-light text-white leading-tight">Chaque équipe peut.</h2>
-          <p className="mt-4 max-w-sm text-base text-gray-500">Cliquez sur un rôle pour voir quel pipeline il construit.</p>
+          <h2 className="text-4xl font-light text-slate-900 leading-tight">Chaque équipe peut.</h2>
+          <p className="mt-4 max-w-sm text-base text-slate-500">Cliquez sur un rôle pour voir quel pipeline il construit.</p>
         </Reveal>
         <div className="flex flex-col gap-10 lg:flex-row lg:gap-20">
           <div className="w-full lg:w-64 shrink-0">
             {ACTORS.map((a, i) => (
               <button key={i} onClick={() => pick(i)}
                 className="group flex w-full items-start gap-4 py-4 text-left"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                style={{ borderBottom: '1px solid rgba(15,23,42,0.06)' }}
               >
                 <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full transition-all duration-300"
-                  style={{ background: active === i ? '#ff6d35' : 'rgba(255,255,255,0.1)',
+                  style={{ background: active === i ? '#ff6d35' : 'rgba(15,23,42,0.10)',
                     boxShadow: active === i ? '0 0 8px rgba(255,109,53,0.5)' : 'none' }} />
                 <div>
                   <p className="text-sm font-semibold transition-colors duration-200"
@@ -604,20 +605,20 @@ function ActorsSection() {
           <div className="flex-1">
             <TiltCard key={key}
               className="rounded-2xl p-6"
-              style={{ background: '#0e0e12', border: '1px solid rgba(255,255,255,0.07)', animation: 'slide-in-right 0.28s cubic-bezier(0.16,1,0.3,1) both' }}
+              style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.07)', animation: 'slide-in-right 0.28s cubic-bezier(0.16,1,0.3,1) both' }}
             >
-              <p className="mb-5 text-xs font-semibold text-gray-600 uppercase tracking-widest">
+              <p className="mb-5 text-xs font-semibold text-slate-500 uppercase tracking-widest">
                 Pipeline · {ACTORS[active].role}
               </p>
               {ACTORS[active].nodes.map((n, i) => (
                 <div key={i}>
                   <div className="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-colors hover:bg-white/3"
-                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)',
+                    style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(15,23,42,0.07)',
                       animation: `slide-up 0.45s cubic-bezier(0.16,1,0.3,1) ${i * 70}ms both` }}>
                     <div className="h-1.5 w-1.5 rounded-full bg-[#ff6d35] opacity-70 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-200">{n.label}</p>
-                      <p className="text-[11px] text-gray-600 font-mono mt-0.5 truncate">{n.sub}</p>
+                      <p className="text-sm font-semibold text-slate-800">{n.label}</p>
+                      <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">{n.sub}</p>
                     </div>
                   </div>
                   {i < ACTORS[active].nodes.length - 1 && (
@@ -625,7 +626,7 @@ function ActorsSection() {
                   )}
                 </div>
               ))}
-              <div className="mt-5 flex items-center gap-2 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="mt-5 flex items-center gap-2 pt-4" style={{ borderTop: '1px solid rgba(15,23,42,0.06)' }}>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" style={{ animation: 'pulse-dot 2s infinite' }} />
                 <span className="text-[11px] font-mono text-emerald-400">Exécution terminée · 0.9s</span>
               </div>
@@ -694,7 +695,7 @@ function ImportVisual() {
             className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-pointer transition-all"
             style={{
               background: expanded === i ? 'rgba(255,109,53,0.06)' : 'rgba(255,255,255,0.025)',
-              border: `1px solid ${expanded===i ? 'rgba(255,109,53,0.3)' : 'rgba(255,255,255,0.07)'}`,
+              border: `1px solid ${expanded===i ? 'rgba(255,109,53,0.3)' : 'rgba(15,23,42,0.07)'}`,
             }}
           >
             <div className="h-2 w-2 shrink-0 rounded-full" style={{
@@ -702,8 +703,8 @@ function ImportVisual() {
               animation: phases[i]==='loading' ? 'pulse-dot 1.2s infinite' : 'none',
             }} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-300 truncate">{f.name}</p>
-              <p className="text-[11px] text-gray-600 mt-0.5">
+              <p className="text-sm text-slate-700 truncate">{f.name}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 {phases[i]==='done'
                   ? `${f.size} · ${f.rows.toLocaleString('fr-FR')} lignes`
                   : phases[i]==='loading'
@@ -712,7 +713,7 @@ function ImportVisual() {
               </p>
             </div>
             {phases[i]==='loading' && (
-              <div className="w-14 h-1 rounded-full overflow-hidden shrink-0" style={{ background:'rgba(255,255,255,0.08)' }}>
+              <div className="w-14 h-1 rounded-full overflow-hidden shrink-0" style={{ background:'rgba(15,23,42,0.08)' }}>
                 <div className="h-full rounded-full bg-blue-400" style={{ width:`${progress[i]}%`, transition:'width 0.1s linear' }} />
               </div>
             )}
@@ -748,9 +749,9 @@ function TransformVisual() {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl px-4 py-3.5" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-xl px-4 py-3.5" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(15,23,42,0.07)' }}>
         <p className="text-[10px] uppercase tracking-widest text-gray-700 mb-2.5">Filtre actif</p>
-        <p className="font-mono text-sm text-gray-200">
+        <p className="font-mono text-sm text-slate-800">
           montant{' '}
           <button
             onClick={() => setOp(OPS[(OPS.indexOf(op)+1) % OPS.length])}
@@ -769,16 +770,16 @@ function TransformVisual() {
       <div className="grid grid-cols-4 gap-2">
         {(Object.keys(AGGS) as Array<keyof typeof AGGS>).map(fn => (
           <button key={fn} onClick={() => setAgg(fn)} className="rounded-lg py-2 text-center transition-all active:scale-95" style={{
-            background: agg===fn ? 'rgba(255,109,53,0.15)' : 'rgba(255,255,255,0.03)',
-            border: `1px solid ${agg===fn ? 'rgba(255,109,53,0.4)' : 'rgba(255,255,255,0.07)'}`,
+            background: agg===fn ? 'rgba(255,109,53,0.15)' : 'rgba(15,23,42,0.04)',
+            border: `1px solid ${agg===fn ? 'rgba(255,109,53,0.4)' : 'rgba(15,23,42,0.07)'}`,
           }}>
             <p className="text-xs font-bold font-mono" style={{ color: agg===fn ? '#ff6d35' : '#6b7280' }}>{fn}</p>
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(255,255,255,0.05)' }}>
-        <span className="text-[10px] text-gray-600 font-mono">{agg}(montant) =</span>
-        <span className="ml-auto text-sm font-bold text-white font-mono">{AGGS[agg]}</span>
+      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background:'rgba(255,255,255,0.025)', border:'1px solid rgba(15,23,42,0.06)' }}>
+        <span className="text-[10px] text-slate-500 font-mono">{agg}(montant) =</span>
+        <span className="ml-auto text-sm font-bold text-slate-900 font-mono">{AGGS[agg]}</span>
       </div>
     </div>
   )
@@ -826,7 +827,7 @@ function VisualiseVisual() {
           </div>
         ))}
         {selected !== null && (
-          <div className="absolute -top-9 left-1/2 -translate-x-1/2 rounded-lg px-3 py-1.5 text-xs font-semibold text-white whitespace-nowrap pointer-events-none"
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 whitespace-nowrap pointer-events-none"
             style={{ background:'#ff6d35', boxShadow:'0 4px 14px rgba(255,109,53,0.4)', animation:'slide-up 0.2s ease' }}>
             {bars[selected].name} · {bars[selected].ca}
           </div>
@@ -836,7 +837,7 @@ function VisualiseVisual() {
         <button
           onClick={() => setSorted(s => !s)}
           className="flex-1 rounded-lg py-2 text-[11px] font-semibold transition-all hover:bg-white/6 active:scale-95"
-          style={{ background:'rgba(255,255,255,0.025)', border:`1px solid ${sorted?'rgba(255,109,53,0.35)':'rgba(255,255,255,0.07)'}`, color:sorted?'#ff6d35':'#6b7280' }}
+          style={{ background:'rgba(255,255,255,0.025)', border:`1px solid ${sorted?'rgba(255,109,53,0.35)':'rgba(15,23,42,0.07)'}`, color:sorted?'#ff6d35':'#6b7280' }}
         >
           {sorted ? 'Trié ↓' : 'Trier ↓'}
         </button>
@@ -859,19 +860,19 @@ function VisualiseVisual() {
 // ─── Feature definitions (texte/structure inchangés) ───────────────────────
 const FEATURES = [
   {
-    tag: 'Import', color: '#00e5a0', bg: '#0a0a0b',
+    tag: 'Import', color: '#00e5a0', bg: '#f4f6f9',
     title: "Vos données dans l'éditeur en 30 secondes.",
     body: "Uploadez un CSV, collez une URL d'API, ou tapez du SQL. DataPipe détecte le schéma et infère les types.",
     Visual: ImportVisual,
   },
   {
-    tag: 'Transform', color: '#ff6d35', bg: '#0c0c10',
+    tag: 'Transform', color: '#ff6d35', bg: '#f4f6f9',
     title: 'Configurez, prévisualisez, ajustez.',
     body: 'Filter, Join, Aggregate, Rename, Clean — chaque nœud est une boîte de dialogue. Configurez en cliquant.',
     Visual: TransformVisual,
   },
   {
-    tag: 'Visualise', color: '#ff6d35', bg: '#0e0e13',
+    tag: 'Visualise', color: '#ff6d35', bg: '#f4f6f9',
     title: 'Voyez le résultat, ajustez, exportez.',
     body: "Après chaque run, consultez les données dans la console, générez un graphique en un clic, ou téléchargez.",
     Visual: VisualiseVisual,
@@ -881,7 +882,7 @@ const FEATURES = [
 function StickyFeatures() {
   return (
     /* Le wrapper doit être non-overflow pour que sticky fonctionne */
-    <section className="border-t relative" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+    <section className="border-t relative" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       {FEATURES.map((f, i) => (
         <div
           key={i}
@@ -900,7 +901,7 @@ function StickyFeatures() {
           {/* Trait supérieur décoratif sur les cartes 2 et 3 */}
           {i > 0 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 h-1 w-12 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.08)' }} />
+              style={{ background: 'rgba(15,23,42,0.08)' }} />
           )}
 
           <div
@@ -912,11 +913,11 @@ function StickyFeatures() {
                 style={{ background: 'rgba(255,109,53,0.12)', border: '1px solid rgba(255,109,53,0.25)', color: '#ff6d35' }}>
                 {f.tag}
               </span>
-              <h3 className="text-2xl font-light leading-snug text-white md:text-3xl">{f.title}</h3>
-              <p className="text-base text-gray-500 leading-relaxed">{f.body}</p>
+              <h3 className="text-2xl font-light leading-snug text-slate-900 md:text-3xl">{f.title}</h3>
+              <p className="text-base text-slate-500 leading-relaxed">{f.body}</p>
             </Reveal>
             <Reveal delay={100} className="w-full md:w-100 shrink-0 rounded-2xl p-5"
-              style={{ background: '#111116', border: '1px solid rgba(255,255,255,0.06)' }}>
+              style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)' }}>
               <f.Visual />
             </Reveal>
           </div>
@@ -946,23 +947,23 @@ const NODE_LIST = [
 
 function NodesSection() {
   return (
-    <section className="border-t py-24" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+    <section className="border-t py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <Reveal className="mb-12">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff6d35] mb-3">12 nœuds</p>
-          <h2 className="text-3xl font-light text-white">Tout pour vos pipelines.</h2>
+          <h2 className="text-3xl font-light text-slate-900">Tout pour vos pipelines.</h2>
         </Reveal>
         <Reveal delay={80}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
             {NODE_LIST.map((n, i) => (
               <div key={i}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 cursor-default transition-all duration-150 hover:-translate-y-0.5 group"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(15,23,42,0.07)' }}
               >
                 <div className="h-2 w-2 shrink-0 rounded-full transition-all duration-200 group-hover:scale-125"
                   style={{ background: n.c, boxShadow: `0 0 6px ${n.c}60` }} />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-gray-300 truncate group-hover:text-white transition-colors">{n.label}</p>
+                  <p className="text-xs font-semibold text-slate-700 truncate group-hover:text-slate-900 transition-colors">{n.label}</p>
                   <p className="text-[10px] text-gray-700">{n.cat}</p>
                 </div>
               </div>
@@ -985,27 +986,27 @@ const TESTIMONIALS = [
 
 function TestimonialsSection() {
   return (
-    <section className="border-t py-24" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+    <section className="border-t py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <Reveal className="mb-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-600">Retours</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Retours</p>
         </Reveal>
         <div className="grid gap-5 md:grid-cols-3">
           {TESTIMONIALS.map((t, i) => (
             <Reveal key={i} delay={i * 80}>
               <TiltCard
                 className="flex h-full flex-col justify-between rounded-2xl p-6"
-                style={{ background: '#0e0e12', border: '1px solid rgba(255,255,255,0.07)' }}
+                style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.07)' }}
               >
-                <p className="text-sm text-gray-400 leading-relaxed">&ldquo;{t.q}&rdquo;</p>
-                <div className="mt-6 flex items-center gap-3 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-sm text-slate-600 leading-relaxed">&ldquo;{t.q}&rdquo;</p>
+                <div className="mt-6 flex items-center gap-3 pt-5" style={{ borderTop: '1px solid rgba(15,23,42,0.06)' }}>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black"
                     style={{ background: 'rgba(255,109,53,0.15)', color: '#ff6d35' }}>
                     {t.name[0]}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-gray-300">{t.name}</p>
-                    <p className="text-[10px] text-gray-600">{t.role}</p>
+                    <p className="text-xs font-semibold text-slate-700">{t.name}</p>
+                    <p className="text-[10px] text-slate-500">{t.role}</p>
                   </div>
                 </div>
               </TiltCard>
@@ -1033,13 +1034,13 @@ function Footer() {
         overflow: 'hidden',
         position: 'relative',
         // Liquid glass : transparent en haut → sombre en bas
-        background: 'linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, rgba(10,10,12,0.72) 40%, rgba(6,6,8,0.92) 100%)',
+        background: 'linear-gradient(to bottom, rgba(15,23,42,0.05) 0%, rgba(10,10,12,0.72) 40%, rgba(6,6,8,0.92) 100%)',
         backdropFilter: 'blur(28px) saturate(160%)',
         WebkitBackdropFilter: 'blur(28px) saturate(160%)',
         // Bordure subtile tout autour — pas de ligne blanche marquée
-        border: '1px solid rgba(255,255,255,0.07)',
+        border: '1px solid rgba(15,23,42,0.07)',
         // Reflet lumineux en haut de la card uniquement
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), 0 32px 80px rgba(0,0,0,0.4)',
+        boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.08), 0 32px 80px rgba(0,0,0,0.4)',
       }}>
 
         {/* Shimmer iridescent — identique au header */}
@@ -1059,7 +1060,7 @@ function Footer() {
               <div className="md:col-span-1 space-y-5">
                 <Link href="/" className="flex items-center gap-2">
                   <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg" />
-                  <span className="text-sm font-bold text-gray-200">DataPipe</span>
+                  <span className="text-sm font-bold text-slate-800">DataPipe</span>
                 </Link>
                 <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.28)' }}>
                   Pipelines visuels.<br />Propulsé par Claude.
@@ -1067,7 +1068,7 @@ function Footer() {
                 <div className="flex items-center gap-2">
                   {['T','G','D','Li'].map(s => (
                     <div key={s}
-                      className="flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-all hover:bg-white/8"
+                      className="flex h-7 w-7 items-center justify-center rounded-md cursor-pointer transition-all hover:bg-slate-900/[0.06]"
                       style={{ border: '1px solid rgba(255,255,255,0.09)' }}>
                       <span className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.28)' }}>{s}</span>
                     </div>
@@ -1102,7 +1103,7 @@ function Footer() {
           </div>
 
           {/* Séparateur */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '0 40px' }} />
+          <div style={{ height: 1, background: 'rgba(15,23,42,0.06)', margin: '0 40px' }} />
 
           {/* Bloc intégrations n8n-style */}
           <div style={{ padding: '32px 40px' }}>
@@ -1144,7 +1145,7 @@ function Footer() {
           </div>
 
           {/* Séparateur */}
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '0 40px' }} />
+          <div style={{ height: 1, background: 'rgba(15,23,42,0.05)', margin: '0 40px' }} />
 
           {/* Bottom bar */}
           <div style={{
@@ -1163,7 +1164,7 @@ function Footer() {
                 >{l}</span>
               ))}
             </div>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)' }}>
+            <span style={{ fontSize: 11, color: 'rgba(15,23,42,0.10)' }}>
               © 2026 DataPipe · Hackathon J.U.I.N 2026 · Claude Sonnet 4.6
             </span>
           </div>
@@ -1182,8 +1183,8 @@ export default function LandingPage() {
   useEffect(() => { if (isAuthenticated && !isDemoMode) router.push('/dashboard') }, [isAuthenticated, isDemoMode, router])
 
   return (
-    <div className="${poppins.variable} relative min-h-screen overflow-x-hidden text-gray-200" style={{
-      background: '#0a0a0b',
+    <div className="${poppins.variable} relative min-h-screen overflow-x-hidden text-slate-800" style={{
+      background: '#f4f6f9',
       backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.09) 1px, transparent 1px)',
       backgroundSize: '14px 14px',
       fontFamily:  "'Poppins', sans-serif",
@@ -1210,7 +1211,7 @@ export default function LandingPage() {
             position: 'absolute', inset: 0,
             backdropFilter: 'blur(24px) saturate(200%) brightness(0.88)',
             WebkitBackdropFilter: 'blur(24px) saturate(200%) brightness(0.88)',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 50%, rgba(255,109,53,0.03) 100%)',
+            background: 'linear-gradient(135deg, rgba(15,23,42,0.07) 0%, rgba(255,255,255,0.02) 50%, rgba(255,109,53,0.03) 100%)',
             border: '1px solid rgba(255,255,255,0.09)',
             borderRadius: 16,
             zIndex: -1,
@@ -1219,7 +1220,7 @@ export default function LandingPage() {
           {/* Shimmer iridescent */}
           <div style={{
             position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: -1,
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,109,53,0.04) 30%, rgba(255,255,255,0.04) 60%, transparent 100%)',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,109,53,0.04) 30%, rgba(15,23,42,0.05) 60%, transparent 100%)',
             animation: 'shimmer 6s ease-in-out infinite',
           }} />
 
@@ -1236,21 +1237,21 @@ export default function LandingPage() {
           }}>
             <Link href="/" className="flex items-center gap-2 group">
               <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg transition-transform duration-200 group-hover:scale-110" />
-              <span className="text-sm font-bold text-white">DataPipe</span>
+              <span className="text-sm font-bold text-slate-900">DataPipe</span>
             </Link>
 
-            <nav className="hidden items-center gap-7 text-sm text-gray-500 md:flex">
+            <nav className="hidden items-center gap-7 text-sm text-slate-500 md:flex">
               {['Produit', 'Nœuds', 'Tarifs', 'Docs'].map(item => (
-                <span key={item} className="cursor-pointer hover:text-gray-200 transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-[#ff6d35] after:transition-all hover:after:w-full">{item}</span>
+                <span key={item} className="cursor-pointer hover:text-slate-800 transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-[#ff6d35] after:transition-all hover:after:w-full">{item}</span>
               ))}
             </nav>
 
             <div className="flex items-center gap-3">
-              <Link href="/demo" className="text-xs text-gray-600 hover:text-gray-300 transition-colors">Démo</Link>
-              <Link href="/login" className="text-sm text-gray-400 hover:text-gray-100 transition-colors">Connexion</Link>
+              <Link href="/demo" className="text-xs text-slate-500 hover:text-slate-700 transition-colors">Démo</Link>
+              <Link href="/login" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">Connexion</Link>
               <Magnetic>
                 <Link href="/register"
-                  className="rounded-lg bg-[#ff6d35] px-4 py-2 text-sm font-light text-white transition-all hover:bg-[#e85e2a] active:scale-95"
+                  className="rounded-lg bg-[#ff6d35] px-4 py-2 text-sm font-light text-slate-900 transition-all hover:bg-[#e85e2a] active:scale-95"
                   style={{ boxShadow: '0 2px 14px rgba(255,109,53,0.28)' }}>
                   Commencer
                 </Link>
@@ -1260,12 +1261,12 @@ export default function LandingPage() {
       </header>
       {/* HERO */}
       <section className="mx-auto max-w-5xl px-6 pt-28 pb-14 text-center relative z-10">
-        <h1 className="mx-auto max-w-3xl text-5xl font-light leading-[1.1] tracking-tight text-white md:text-[64px]"
+        <h1 className="mx-auto max-w-3xl text-5xl font-light leading-[1.1] tracking-tight text-slate-900 md:text-[64px]"
           style={{ animation: 'slide-up 0.7s cubic-bezier(0.16,1,0.3,1) both' }}>
           Transformez <Typewriter /><br />
-          <span className="text-gray-400 font-light">en insights actionnables.</span>
+          <span className="text-slate-600 font-light">en insights actionnables.</span>
         </h1>
-        <p className="mx-auto mt-7 max-w-md text-base text-gray-500 leading-relaxed"
+        <p className="mx-auto mt-7 max-w-md text-base text-slate-500 leading-relaxed"
           style={{ animation: 'slide-up 0.7s cubic-bezier(0.16,1,0.3,1) 120ms both' }}>
           Pipelines de données visuels. Filtrez, joignez, transformez avec l&apos;IA. Sans écrire une ligne de code.
         </p>
@@ -1273,7 +1274,7 @@ export default function LandingPage() {
           style={{ animation: 'slide-up 0.7s cubic-bezier(0.16,1,0.3,1) 200ms both' }}>
           <Magnetic>
             <Link href="/register"
-              className="group flex items-center gap-2 rounded-xl bg-[#ff6d35] px-7 py-3.5 text-base font-light text-white transition-all hover:bg-[#e85e2a] active:scale-95"
+              className="group flex items-center gap-2 rounded-xl bg-[#ff6d35] px-7 py-3.5 text-base font-light text-slate-900 transition-all hover:bg-[#e85e2a] active:scale-95"
               style={{ boxShadow: '0 4px 28px rgba(255,109,53,0.3)' }}>
               Créer un pipeline gratuit
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -1281,8 +1282,8 @@ export default function LandingPage() {
           </Magnetic>
           <Magnetic>
             <Link href="/demo"
-              className="flex items-center gap-2 rounded-xl border px-7 py-3.5 text-base font-medium text-gray-400 transition-all hover:text-gray-100 hover:bg-white/5"
-              style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+              className="flex items-center gap-2 rounded-xl border px-7 py-3.5 text-base font-medium text-slate-600 transition-all hover:text-slate-900 hover:bg-slate-900/5"
+              style={{ borderColor: 'rgba(15,23,42,0.10)' }}>
               <Play className="h-4 w-4" fill="currentColor" />
               Voir la démo
             </Link>
@@ -1296,14 +1297,14 @@ export default function LandingPage() {
       {/* PRODUCT SCREENSHOT */}
       <Reveal className="relative z-10 mx-auto max-w-5xl px-6 pb-10">
         <div className="overflow-hidden rounded-2xl border" style={{
-          borderColor: 'rgba(255,255,255,0.08)',
-          boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 120px rgba(0,0,0,0.8)',
+          borderColor: 'rgba(15,23,42,0.08)',
+          boxShadow: '0 0 0 1px rgba(15,23,42,0.04), 0 40px 120px rgba(0,0,0,0.8)',
         }}>
-          <div className="flex items-center gap-2 border-b px-5 py-3" style={{ background: '#0e0e12', borderColor: 'rgba(255,255,255,0.06)' }}>
+          <div className="flex items-center gap-2 border-b px-5 py-3" style={{ background: '#f4f6f9', borderColor: 'rgba(15,23,42,0.07)' }}>
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: '#ff5f57' }} />
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: '#febc2e' }} />
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: '#28c840' }} />
-            <div className="mx-auto flex items-center gap-2 rounded-md px-4 py-1 text-[11px] text-gray-600" style={{ background: 'rgba(255,255,255,0.04)' }}>
+            <div className="mx-auto flex items-center gap-2 rounded-md px-4 py-1 text-[11px] text-slate-500" style={{ background: 'rgba(15,23,42,0.05)' }}>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               datapipe.io/editor/pipeline-abc123
             </div>
@@ -1314,7 +1315,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex" style={{ height: 282 }}>
-            <div className="w-44 shrink-0 border-r p-3 space-y-1" style={{ borderColor: 'rgba(255,255,255,0.05)', background: '#0c0c10' }}>
+            <div className="w-44 shrink-0 border-r p-3 space-y-1" style={{ borderColor: 'rgba(15,23,42,0.06)', background: '#f4f6f9' }}>
               <p className="px-1 pb-2 text-[9px] font-bold uppercase tracking-widest text-gray-700">Nœuds</p>
               {[
                 { label: 'CSV Import', c: '#00e5a0' }, { label: 'JSON Loader', c: '#00e5a0' },
@@ -1322,12 +1323,12 @@ export default function LandingPage() {
                 { label: 'IA Transform', c: '#ff6d35' }, { label: 'Chart', c: '#ff6d35' },
                 { label: 'Export', c: '#ff6d35' },
               ].map(n => (
-                <div key={n.label} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/4 cursor-pointer transition-colors group">
+                <div key={n.label} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-900/[0.04] cursor-pointer transition-colors group">
                   <div className="h-4 w-4 shrink-0 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
                     style={{ background: n.c + '18', border: `1px solid ${n.c}28` }}>
                     <div className="h-1.5 w-1.5 rounded-full" style={{ background: n.c }} />
                   </div>
-                  <span className="text-[10px] text-gray-500 group-hover:text-gray-300 transition-colors">{n.label}</span>
+                  <span className="text-[10px] text-slate-500 group-hover:text-slate-700 transition-colors">{n.label}</span>
                 </div>
               ))}
             </div>
@@ -1337,7 +1338,7 @@ export default function LandingPage() {
       </Reveal>
 
       {/* STATS */}
-      <section className="relative z-10 border-t border-b" style={{ borderColor: 'rgba(255,255,255,0.06)', background: '#0c0c10' }}>
+      <section className="relative z-10 border-t border-b" style={{ borderColor: 'rgba(15,23,42,0.07)', background: '#f4f6f9' }}>
         <div className="mx-auto grid max-w-5xl grid-cols-2 md:grid-cols-4">
           {[
             { value: 12,  suffix: '',  label: 'Types de nœuds' },
@@ -1346,9 +1347,9 @@ export default function LandingPage() {
             { value: 1,   suffix: 's', label: 'Temps de run moyen' },
           ].map((s, i) => (
             <div key={i} className="flex flex-col items-center py-10 px-8 transition-colors hover:bg-white/2 cursor-default"
-              style={{ borderRight: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <span className="text-4xl font-medium text-white"><CountUp to={s.value} suffix={s.suffix} /></span>
-              <span className="mt-1 text-xs text-gray-600 text-center">{s.label}</span>
+              style={{ borderRight: i < 3 ? '1px solid rgba(15,23,42,0.06)' : 'none' }}>
+              <span className="text-4xl font-medium text-slate-900"><CountUp to={s.value} suffix={s.suffix} /></span>
+              <span className="mt-1 text-xs text-slate-500 text-center">{s.label}</span>
             </div>
           ))}
         </div>
@@ -1364,25 +1365,25 @@ export default function LandingPage() {
       </div>
 
       {/* CTA */}
-      <section className="relative z-10 border-t py-28" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+      <section className="relative z-10 border-t py-28" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
         <Reveal className="mx-auto max-w-xl px-6 text-center">
-          <h2 className="text-4xl font-light text-white md:text-4xl leading-tight">
+          <h2 className="text-4xl font-light text-slate-900 md:text-4xl leading-tight">
             Commencez maintenant.<br />
             <span style={{ color: '#ff6d35' }}>C&apos;est gratuit.</span>
           </h2>
-          <p className="mt-5 text-base text-gray-500">Votre premier pipeline est à 2 minutes.</p>
+          <p className="mt-5 text-base text-slate-500">Votre premier pipeline est à 2 minutes.</p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Magnetic>
               <Link href="/register"
-                className="group flex items-center gap-2 rounded-xl bg-[#ff6d35] px-8 py-4 text-base font-bold text-white transition-all hover:bg-[#e85e2a] active:scale-95"
+                className="group flex items-center gap-2 rounded-xl bg-[#ff6d35] px-8 py-4 text-base font-bold text-slate-900 transition-all hover:bg-[#e85e2a] active:scale-95"
                 style={{ boxShadow: '0 4px 32px rgba(255,109,53,0.28)' }}>
                 Créer mon compte gratuit
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </Magnetic>
             <Link href="/demo"
-              className="flex items-center gap-2 rounded-xl border px-8 py-4 text-base font-medium text-gray-400 hover:text-gray-100 hover:bg-white/5 transition-all"
-              style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+              className="flex items-center gap-2 rounded-xl border px-8 py-4 text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-900/5 transition-all"
+              style={{ borderColor: 'rgba(15,23,42,0.10)' }}>
               Voir la démo
             </Link>
           </div>

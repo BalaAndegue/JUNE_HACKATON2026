@@ -21,7 +21,7 @@ export function ChartPreview({ config, data }: Props) {
 
   if (!data.length || !xKey) {
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-gray-600">
+      <div className="flex items-center justify-center h-48 text-sm text-slate-500">
         Aucune donnée à afficher
       </div>
     )
@@ -33,17 +33,17 @@ export function ChartPreview({ config, data }: Props) {
   }
 
   const axisStyle = { fill: '#6b7280', fontSize: 11 }
-  const gridStyle = { stroke: '#1e1e1e' }
+  const gridStyle = { stroke: '#e6e8ec' }
   const tooltipStyle = {
-    contentStyle: { background: '#111111', border: '1px solid #2a2a2a', borderRadius: 8 },
-    labelStyle: { color: '#e5e5e5' },
+    contentStyle: { background: '#ffffff', border: '1px solid #d7dbe2', borderRadius: 8 },
+    labelStyle: { color: '#1c2230' },
     itemStyle: { color: color },
   }
 
   return (
     <div className="w-full">
       {config.title && (
-        <p className="text-xs font-semibold text-gray-400 text-center mb-3">{config.title}</p>
+        <p className="text-xs font-semibold text-slate-600 text-center mb-3">{config.title}</p>
       )}
       <ResponsiveContainer width="100%" height={220}>
         {config.chart_type === 'bar' ? (

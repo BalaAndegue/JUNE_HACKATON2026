@@ -17,14 +17,14 @@ export const CSVImportNode = memo((props: NodeProps) => {
         <div className="space-y-0.5">
           <span className="truncate text-emerald-400 block">{cfg.file_name}</span>
           {cfg.separator && (
-            <span className="text-[10px] text-gray-600">sep: {cfg.separator === '\t' ? 'tab' : cfg.separator}</span>
+            <span className="text-[10px] text-slate-500">sep: {cfg.separator === '\t' ? 'tab' : cfg.separator}</span>
           )}
           {preview?.message && (
             <span className="text-[10px] text-emerald-500 block">{preview.message}</span>
           )}
         </div>
       ) : (
-        <span className="text-gray-600 italic">Aucun fichier sélectionné</span>
+        <span className="text-slate-500 italic">Aucun fichier sélectionné</span>
       )}
     </BaseNode>
   )
@@ -44,14 +44,14 @@ export const JSONLoaderNode = memo((props: NodeProps) => {
             {cfg.source === 'url' ? cfg.url : cfg.file_name}
           </span>
           {cfg.root_path && (
-            <span className="text-[10px] text-gray-600">racine: {cfg.root_path}</span>
+            <span className="text-[10px] text-slate-500">racine: {cfg.root_path}</span>
           )}
           {preview?.message && (
             <span className="text-[10px] text-emerald-500 block">{preview.message}</span>
           )}
         </div>
       ) : (
-        <span className="text-gray-600 italic">Aucune source configurée</span>
+        <span className="text-slate-500 italic">Aucune source configurée</span>
       )}
     </BaseNode>
   )
@@ -75,7 +75,7 @@ export const SQLSourceNode = memo((props: NodeProps) => {
           )}
         </div>
       ) : (
-        <span className="text-gray-600 italic">Aucune requête</span>
+        <span className="text-slate-500 italic">Aucune requête</span>
       )}
     </BaseNode>
   )

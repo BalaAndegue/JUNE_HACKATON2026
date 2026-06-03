@@ -102,16 +102,16 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
   }
 
   return (
-    <div className="absolute bottom-4 right-4 z-50 flex h-[520px] w-[380px] flex-col rounded-xl border border-[#2a2a2a] bg-[#0f0f0f] shadow-2xl">
+    <div className="absolute bottom-4 right-4 z-50 flex h-[520px] w-[380px] flex-col rounded-xl border border-[#d7dbe2] bg-[#f4f6f9] shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between rounded-t-xl border-b border-[#1e1e1e] px-4 py-3">
+      <div className="flex items-center justify-between rounded-t-xl border-b border-[#e6e8ec] px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/20">
             <Sparkles className="h-4 w-4 text-purple-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-200">Assistant IA</p>
-            <p className="text-[10px] text-gray-600">Propulsé par Claude</p>
+            <p className="text-sm font-semibold text-slate-800">Assistant IA</p>
+            <p className="text-[10px] text-slate-500">Propulsé par Claude</p>
           </div>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={() => setAIChatOpen(false)}>
@@ -120,15 +120,15 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
       </div>
 
       {/* Quick actions */}
-      <div className="flex gap-1.5 border-b border-[#1e1e1e] px-3 py-2">
+      <div className="flex gap-1.5 border-b border-[#e6e8ec] px-3 py-2">
         <button
-          className="flex items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#141414] px-2.5 py-1 text-[10px] text-gray-400 hover:border-purple-500/50 hover:text-purple-400 transition-colors"
+          className="flex items-center gap-1 rounded-full border border-[#d7dbe2] bg-[#ffffff] px-2.5 py-1 text-[10px] text-slate-600 hover:border-purple-500/50 hover:text-purple-400 transition-colors"
           onClick={() => setInput('Génère un pipeline pour ')}
         >
           <Zap className="h-2.5 w-2.5" /> Générer pipeline
         </button>
         <button
-          className="flex items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#141414] px-2.5 py-1 text-[10px] text-gray-400 hover:border-purple-500/50 hover:text-purple-400 transition-colors"
+          className="flex items-center gap-1 rounded-full border border-[#d7dbe2] bg-[#ffffff] px-2.5 py-1 text-[10px] text-slate-600 hover:border-purple-500/50 hover:text-purple-400 transition-colors"
           onClick={() => setInput('Génère du SQL pour ')}
         >
           <Zap className="h-2.5 w-2.5" /> Générer SQL
@@ -144,8 +144,8 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
                 className={cn(
                   'max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed',
                   msg.role === 'user'
-                    ? 'bg-[#ff6d35]/20 text-gray-200'
-                    : 'bg-[#141414] text-gray-300'
+                    ? 'bg-[#ff6d35]/20 text-slate-800'
+                    : 'bg-[#ffffff] text-slate-700'
                 )}
               >
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -154,7 +154,7 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-[#141414] rounded-xl px-3 py-2">
+              <div className="bg-[#ffffff] rounded-xl px-3 py-2">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
               </div>
             </div>
@@ -164,7 +164,7 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
       </ScrollArea>
 
       {/* Input */}
-      <div className="border-t border-[#1e1e1e] p-3 space-y-2">
+      <div className="border-t border-[#e6e8ec] p-3 space-y-2">
         <Textarea
           className="min-h-[60px] resize-none text-xs"
           placeholder="Posez votre question ou décrivez le pipeline à créer…"

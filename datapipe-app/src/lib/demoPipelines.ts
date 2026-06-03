@@ -5,11 +5,11 @@ import { NODE_REGISTRY } from './nodeRegistry'
 type DemoNode = { id: string; type: string; position: { x: number; y: number }; data: NodeData }
 
 function makeNodeTypes() {
-  return NODE_REGISTRY.map((n) => ({ slug: n.slug, label: n.label, category: n.category, description: n.description }))
+  return NODE_REGISTRY
 }
 
 function pipe(id: string, name: string, desc: string): Pipeline {
-  return { id, name, description: desc, workspace_id: 'demo', nodes_count: 0, created_at: '', updated_at: '' }
+  return { id, name, description: desc, workspace_id: 'demo', status: 'active', nodes_count: 0, created_at: '', updated_at: '' }
 }
 
 // ── Pipeline 1 — Analyse des ventes ──────────────────────────────────────

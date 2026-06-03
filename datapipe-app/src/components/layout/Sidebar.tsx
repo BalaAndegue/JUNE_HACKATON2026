@@ -30,16 +30,16 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      'flex h-full flex-col border-r border-[#1e1e1e] bg-[#0a0a0a] transition-all duration-300',
+      'flex h-full flex-col border-r border-[#e6e8ec] bg-[#f4f6f9] transition-all duration-300',
       sidebarCollapsed ? 'w-16' : 'w-[220px]'
     )}>
       {/* Logo / toggle */}
-      <div className="flex h-14 items-center border-b border-[#1e1e1e] px-3">
+      <div className="flex h-14 items-center border-b border-[#e6e8ec] px-3">
         {sidebarCollapsed ? (
           /* Collapsed : uniquement le bouton pour réouvrir, centré */
           <button
             onClick={toggleSidebar}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-[#141414] hover:text-gray-300 transition-colors mx-auto"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-[#ffffff] hover:text-slate-700 transition-colors mx-auto"
             title="Déplier la sidebar"
           >
             <ChevronLeft className="h-4 w-4 rotate-180" />
@@ -49,11 +49,11 @@ export function Sidebar() {
           <>
             <div className="flex flex-1 items-center gap-2.5 min-w-0">
               <Image src="/logo.png" alt="DataPipe" width={44} height={44} className="rounded-lg shrink-0" />
-              <span className="text-sm font-bold tracking-tight text-gray-100 truncate">DataPipe</span>
+              <span className="text-sm font-bold tracking-tight text-slate-900 truncate">DataPipe</span>
             </div>
             <button
               onClick={toggleSidebar}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-[#141414] hover:text-gray-300 transition-colors"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-[#ffffff] hover:text-slate-700 transition-colors"
               title="Réduire la sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -75,7 +75,7 @@ export function Sidebar() {
                 'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-[#ff6d35]/15 text-[#ff6d35]'
-                  : 'text-gray-500 hover:bg-[#141414] hover:text-gray-300',
+                  : 'text-slate-500 hover:bg-[#ffffff] hover:text-slate-700',
                 sidebarCollapsed && 'justify-center'
               )}
             >
@@ -96,8 +96,8 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="border-t border-[#1e1e1e] p-3">
-        <div className={cn('flex items-center rounded-md px-2 py-1.5 text-xs text-gray-600 transition-all', sidebarCollapsed && 'justify-center')}>
+      <div className="border-t border-[#e6e8ec] p-3">
+        <div className={cn('flex items-center rounded-md px-2 py-1.5 text-xs text-slate-500 transition-all', sidebarCollapsed && 'justify-center')}>
           <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
           {!sidebarCollapsed && <span className="ml-2">API connectée</span>}
         </div>

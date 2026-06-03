@@ -38,10 +38,10 @@ export function Navbar({ title }: NavbarProps) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#1e1e1e] bg-[#0a0a0a] px-5">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#e6e8ec] bg-[#f4f6f9] px-5">
       {/* Left */}
       <div className="flex items-center gap-3">
-        {title && <h1 className="text-sm font-semibold text-gray-300">{title}</h1>}
+        {title && <h1 className="text-sm font-semibold text-slate-700">{title}</h1>}
       </div>
 
       {/* Right */}
@@ -55,7 +55,7 @@ export function Navbar({ title }: NavbarProps) {
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-slate-900">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -74,8 +74,8 @@ export function Navbar({ title }: NavbarProps) {
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
               <div className="flex flex-col gap-0.5">
-                <span className="text-gray-200 font-medium">{user?.name}</span>
-                <span className="text-gray-600 text-xs font-normal truncate">{user?.email}</span>
+                <span className="text-slate-800 font-medium">{user?.name}</span>
+                <span className="text-slate-500 text-xs font-normal truncate">{user?.email}</span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

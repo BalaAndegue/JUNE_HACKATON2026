@@ -15,7 +15,7 @@ export const GenericNode = memo((props: NodeProps) => {
 
   return (
     <BaseNode {...props} color={color} icon={<Box className="h-3.5 w-3.5" />}>
-      <span className="text-gray-600 italic text-[10px]">{typeDef?.label ?? typeSlug}</span>
+      <span className="text-slate-500 italic text-[10px]">{typeDef?.label ?? typeSlug}</span>
     </BaseNode>
   )
 })

@@ -81,16 +81,16 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
       {/* Bouton + — carré, en haut à droite du canvas */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="absolute top-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-150 hover:bg-white/10 active:scale-95"
+        className="absolute top-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-150 hover:bg-slate-900/10 active:scale-95"
         style={{
-          background: open ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)',
+          background: open ? 'rgba(15,23,42,0.10)' : 'rgba(15,23,42,0.07)',
           border: '1px solid rgba(255,255,255,0.12)',
         }}
         title="Ajouter un nœud"
       >
         {open
-          ? <X className="h-3.5 w-3.5 text-gray-400" />
-          : <Plus className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
+          ? <X className="h-3.5 w-3.5 text-slate-600" />
+          : <Plus className="h-3.5 w-3.5 text-slate-600" strokeWidth={2} />
         }
       </button>
 
@@ -100,8 +100,8 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
         style={{
           width: 260,
           height: '100%',
-          background: '#0d0d0f',
-          borderLeft: '1px solid rgba(255,255,255,0.07)',
+          background: '#f4f6f9',
+          borderLeft: '1px solid rgba(15,23,42,0.07)',
           transform: open ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.22s cubic-bezier(0.16,1,0.3,1)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.35)',
@@ -110,21 +110,21 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
         {/* Header */}
         <div
           className="flex items-center justify-between px-4 py-3"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          style={{ borderBottom: '1px solid rgba(15,23,42,0.07)' }}
         >
-          <p className="text-xs font-semibold text-gray-300">Nœuds</p>
+          <p className="text-xs font-semibold text-slate-700">Nœuds</p>
           <button
             onClick={() => setOpen(false)}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-600 hover:bg-white/8 hover:text-gray-300 transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 hover:bg-slate-900/[0.06] hover:text-slate-700 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {/* Search */}
-        <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(15,23,42,0.06)' }}>
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-600" />
+            <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-500" />
             <Input
               className="h-7 pl-8 text-xs"
               placeholder="Rechercher…"
@@ -148,7 +148,7 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
                   draggable
                   onDragStart={(e) => handleDragStart(e, type)}
                   onClick={() => handleAdd(type)}
-                  className="group flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-white/5"
+                  className="group flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-slate-900/5"
                   title={type.description}
                 >
                   {/* dot coloré — pas d'emoji */}
@@ -157,7 +157,7 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
                     style={{ background: type.color }}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-400 group-hover:text-gray-200 transition-colors truncate">
+                    <p className="text-xs font-medium text-slate-600 group-hover:text-slate-800 transition-colors truncate">
                       {type.label}
                     </p>
                   </div>
@@ -167,7 +167,7 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
           ))}
         </div>
 
-        <div className="px-4 py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="px-4 py-2" style={{ borderTop: '1px solid rgba(15,23,42,0.06)' }}>
           <p className="text-[9px] text-gray-700">Cliquer · Glisser pour placer</p>
         </div>
       </div>

@@ -55,7 +55,7 @@ export default function NotificationsPage() {
     <div className="p-6 space-y-5 max-w-3xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-gray-100">Notifications</h1>
+          <h1 className="text-xl font-bold text-slate-900">Notifications</h1>
           {unread > 0 && <Badge variant="destructive">{unread} non lues</Badge>}
         </div>
         {unread > 0 && (
@@ -68,7 +68,7 @@ export default function NotificationsPage() {
       {notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <Bell className="h-10 w-10 text-gray-700" />
-          <p className="text-sm text-gray-600">Aucune notification</p>
+          <p className="text-sm text-slate-500">Aucune notification</p>
         </div>
       ) : (
         <div className="space-y-1.5">
@@ -79,13 +79,13 @@ export default function NotificationsPage() {
                 key={n.id}
                 className={cn(
                   'flex items-start gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-colors',
-                  n.read ? 'border-[#1a1a1a] bg-transparent' : 'border-[#2a2a2a] bg-[#111111]'
+                  n.read ? 'border-[#f1f3f6] bg-transparent' : 'border-[#d7dbe2] bg-[#ffffff]'
                 )}
                 onClick={() => handleMarkRead(n)}
               >
                 <div className={cn('mt-0.5 shrink-0', cfg.color)}>{cfg.icon}</div>
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm', n.read ? 'text-gray-500' : 'text-gray-200')}>{n.message}</p>
+                  <p className={cn('text-sm', n.read ? 'text-slate-500' : 'text-slate-800')}>{n.message}</p>
                   <p className="text-xs text-gray-700 mt-0.5">{getRelativeTime(n.created_at)}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -94,7 +94,7 @@ export default function NotificationsPage() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={(e) => { e.stopPropagation(); handleDelete(n) }}
-                    className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-gray-400 h-6 w-6"
+                    className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-slate-600 h-6 w-6"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>

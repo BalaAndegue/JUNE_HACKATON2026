@@ -73,7 +73,7 @@ function PipelineCanvas() {
           <g key={i}>
             <line
               x1={a.x + 88} y1={a.y + 22} x2={b.x} y2={b.y + 22}
-              stroke={active ? a.color : 'rgba(255,255,255,0.07)'}
+              stroke={active ? a.color : 'rgba(15,23,42,0.07)'}
               strokeWidth={active ? 1.5 : 1}
               strokeDasharray={active ? 'none' : '5 4'}
               style={{ transition: 'stroke 0.4s' }}
@@ -101,16 +101,16 @@ function PipelineCanvas() {
               </rect>
             )}
             <rect x={node.x} y={node.y} width={88} height={44} rx={rx}
-              fill={isDone || isActive ? `${c}18` : 'rgba(255,255,255,0.03)'}
-              stroke={isDone || isActive ? `${c}55` : 'rgba(255,255,255,0.07)'}
+              fill={isDone || isActive ? `${c}18` : 'rgba(15,23,42,0.04)'}
+              stroke={isDone || isActive ? `${c}55` : 'rgba(15,23,42,0.07)'}
               strokeWidth={isActive ? 1.5 : 1}
               style={{ transition: 'all 0.4s' }} />
             <rect x={node.x} y={node.y} width={88} height={2.5} rx={rx}
-              fill={isDone || isActive ? c : 'rgba(255,255,255,0.05)'}
+              fill={isDone || isActive ? c : 'rgba(15,23,42,0.06)'}
               opacity={isDone || isActive ? 0.8 : 1}
               style={{ transition: 'fill 0.4s' }} />
             <circle cx={node.x + 78} cy={node.y + 10} r={3.5}
-              fill={isDone ? '#10b981' : isActive ? c : 'rgba(255,255,255,0.1)'}
+              fill={isDone ? '#10b981' : isActive ? c : 'rgba(15,23,42,0.10)'}
               style={{ transition: 'fill 0.4s' }}>
               {isActive && <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite" />}
             </circle>
@@ -131,9 +131,9 @@ function PipelineCanvas() {
 // ─────────────────────────────────────────────────────────────────────────
 const inputBase: React.CSSProperties = {
   width: '100%', height: 42, padding: '0 14px',
-  background: 'rgba(255,255,255,0.04)',
+  background: 'rgba(15,23,42,0.05)',
   border: '1px solid rgba(255,255,255,0.09)',
-  borderRadius: 10, color: '#f0f0f0',
+  borderRadius: 10, color: '#1c2230',
   fontSize: 13, fontFamily: 'inherit', outline: 'none',
   transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
 }
@@ -144,7 +144,7 @@ const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
 }
 const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
   e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
-  e.currentTarget.style.background   = 'rgba(255,255,255,0.04)'
+  e.currentTarget.style.background   = 'rgba(15,23,42,0.05)'
   e.currentTarget.style.boxShadow    = 'none'
 }
 
@@ -184,11 +184,11 @@ export default function RegisterPage() {
     width: '100%', maxWidth: 440,
     margin: '0 24px',
     borderRadius: 20, overflow: 'hidden',
-    background: 'linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, rgba(12,12,18,0.82) 35%, rgba(8,8,12,0.95) 100%)',
+    background: 'linear-gradient(to bottom, rgba(15,23,42,0.07) 0%, rgba(12,12,18,0.82) 35%, rgba(8,8,12,0.95) 100%)',
     backdropFilter: 'blur(32px) saturate(160%)',
     WebkitBackdropFilter: 'blur(32px) saturate(160%)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07), 0 40px 100px rgba(0,0,0,0.6)',
+    border: '1px solid rgba(15,23,42,0.08)',
+    boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.07), 0 40px 100px rgba(0,0,0,0.6)',
     opacity:   mounted ? 1 : 0,
     transform: mounted ? 'translateY(0)' : 'translateY(20px)',
     transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)',
@@ -199,8 +199,8 @@ export default function RegisterPage() {
       className={poppins.className}
       style={{
         position: 'relative', minHeight: '100vh',
-        background: '#08080c',
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)',
+        background: '#f4f6f9',
+        backgroundImage: 'radial-gradient(circle, rgba(15,23,42,0.07) 1px, transparent 1px)',
         backgroundSize: '14px 14px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
@@ -269,7 +269,7 @@ export default function RegisterPage() {
               <div style={{ marginBottom: 28 }}>
                 <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
                   <Image src="/logo.png" alt="DataPipe" width={52} height={52} style={{ borderRadius: 9 }} />
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#f0f0f0', letterSpacing: '-0.2px' }}>DataPipe</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#1c2230', letterSpacing: '-0.2px' }}>DataPipe</span>
                 </Link>
               </div>
 
@@ -338,7 +338,7 @@ export default function RegisterPage() {
                           flex: 1, height: 2.5, borderRadius: 99,
                           background: form.password.length >= i * 2
                             ? i <= 1 ? '#ef4444' : i <= 2 ? '#f59e0b' : i <= 3 ? '#3b82f6' : '#10b981'
-                            : 'rgba(255,255,255,0.08)',
+                            : 'rgba(15,23,42,0.08)',
                           transition: 'background 0.2s',
                         }} />
                       ))}

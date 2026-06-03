@@ -49,10 +49,10 @@ export default function DashboardPage() {
     <div className="p-6 space-y-6 max-w-6xl">
       {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-100">
+        <h1 className="text-2xl font-bold text-slate-900">
           Bonjour, {user?.name?.split(' ')[0]} 👋
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Voici un aperçu de votre workspace</p>
+        <p className="mt-1 text-sm text-slate-500">Voici un aperçu de votre workspace</p>
       </div>
 
       {/* Stats */}
@@ -113,14 +113,14 @@ export default function DashboardPage() {
             ) : (
               pipelines.map((p) => (
                 <Link key={p.id} href={`/dashboard/pipelines/${p.id}/editor`}>
-                  <div className="flex items-center justify-between rounded-lg border border-[#1e1e1e] px-3 py-2.5 hover:bg-[#141414] transition-colors cursor-pointer">
+                  <div className="flex items-center justify-between rounded-lg border border-[#e6e8ec] px-3 py-2.5 hover:bg-[#ffffff] transition-colors cursor-pointer">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#ff6d35]/10">
                         <Zap className="h-3.5 w-3.5 text-[#ff6d35]" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-200">{p.name}</p>
-                        <p className="text-xs text-gray-600">{p.nodes_count ?? 0} nœuds</p>
+                        <p className="text-sm font-medium text-slate-800">{p.name}</p>
+                        <p className="text-xs text-slate-500">{p.nodes_count ?? 0} nœuds</p>
                       </div>
                     </div>
                     <Badge variant={statusVariant(p.last_run_status)}>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
               <EmptyState icon={<Play className="h-8 w-8 text-gray-700" />} label="Aucun run" />
             ) : (
               recentRuns.map((run) => (
-                <div key={run.id} className="flex items-center justify-between rounded-lg border border-[#1e1e1e] px-3 py-2.5">
+                <div key={run.id} className="flex items-center justify-between rounded-lg border border-[#e6e8ec] px-3 py-2.5">
                   <div className="flex items-center gap-2.5">
                     {run.status === 'success' ? (
                       <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -155,13 +155,13 @@ export default function DashboardPage() {
                       <div className="h-4 w-4 rounded-full border-2 border-blue-400 animate-spin border-t-transparent shrink-0" />
                     )}
                     <div>
-                      <p className="text-sm font-medium text-gray-200 font-mono">#{run.id.slice(-8)}</p>
-                      <p className="text-xs text-gray-600">{getRelativeTime(run.started_at)}</p>
+                      <p className="text-sm font-medium text-slate-800 font-mono">#{run.id.slice(-8)}</p>
+                      <p className="text-xs text-slate-500">{getRelativeTime(run.started_at)}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     {run.duration_ms && (
-                      <p className="text-xs text-gray-500">{formatDuration(run.duration_ms)}</p>
+                      <p className="text-xs text-slate-500">{formatDuration(run.duration_ms)}</p>
                     )}
                     {run.rows_processed && (
                       <p className="text-xs text-gray-700">{run.rows_processed} lignes</p>
@@ -183,8 +183,8 @@ function StatCard({ icon, label, value, bg }: { icon: React.ReactNode; label: st
       <CardContent className="flex items-center gap-4 p-4">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bg}`}>{icon}</div>
         <div>
-          <p className="text-xs text-gray-600">{label}</p>
-          <p className="text-xl font-bold text-gray-100">{value}</p>
+          <p className="text-xs text-slate-500">{label}</p>
+          <p className="text-xl font-bold text-slate-900">{value}</p>
         </div>
       </CardContent>
     </Card>
@@ -195,7 +195,7 @@ function EmptyState({ icon, label, action }: { icon: React.ReactNode; label: str
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
       {icon}
-      <p className="text-sm text-gray-600">{label}</p>
+      <p className="text-sm text-slate-500">{label}</p>
       {action}
     </div>
   )

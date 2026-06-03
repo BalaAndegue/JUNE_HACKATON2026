@@ -15,10 +15,10 @@ export default function DemoPage() {
   }, [enableDemoMode, router])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0b]">
+    <div className="flex min-h-screen items-center justify-center bg-[#f4f6f9]">
       <div className="flex flex-col items-center gap-4">
         <Image src="/logo.png" alt="DataPipe" width={64} height={64} className="rounded-2xl animate-pulse" />
-        <p className="text-sm text-gray-500">Chargement du mode démo…</p>
+        <p className="text-sm text-slate-500">Chargement du mode démo…</p>
       </div>
     </div>
   )

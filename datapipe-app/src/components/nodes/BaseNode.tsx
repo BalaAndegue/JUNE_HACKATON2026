@@ -17,7 +17,7 @@ interface BaseNodeProps extends NodeProps {
 }
 
 const statusConfig: Record<NodeStatus, { border: string; glow: string; icon: ReactNode }> = {
-  idle: { border: 'border-[#2a2a2a]', glow: '', icon: null },
+  idle: { border: 'border-[#d7dbe2]', glow: '', icon: null },
   running: {
     border: 'border-blue-500',
     glow: 'shadow-[0_0_12px_rgba(59,130,246,0.35)]',
@@ -33,7 +33,7 @@ const statusConfig: Record<NodeStatus, { border: string; glow: string; icon: Rea
     glow: 'shadow-[0_0_10px_rgba(239,68,68,0.25)]',
     icon: <XCircle className="h-3 w-3 text-red-400" />,
   },
-  skipped: { border: 'border-gray-700', glow: '', icon: null },
+  skipped: { border: 'border-slate-200', glow: '', icon: null },
 }
 
 export const BaseNode = memo(({
@@ -50,10 +50,10 @@ export const BaseNode = memo(({
   return (
     <div
       className={cn(
-        'relative min-w-[180px] max-w-[240px] rounded-xl border-2 bg-[#141414] transition-all duration-150 cursor-pointer select-none',
+        'relative min-w-[180px] max-w-[240px] rounded-xl border-2 bg-[#ffffff] transition-all duration-150 cursor-pointer select-none',
         border,
         glow,
-        selected && 'ring-2 ring-[#ff6d35] ring-offset-1 ring-offset-[#0a0a0a]'
+        selected && 'ring-2 ring-[#ff6d35] ring-offset-1 ring-offset-[#f4f6f9]'
       )}
       onClick={() => setSelectedNode(id)}
     >
@@ -62,7 +62,7 @@ export const BaseNode = memo(({
         <Handle
           type="target"
           position={Position.Left}
-          className="!h-3 !w-3 !rounded-full !border-2 !border-[#2a2a2a] !bg-[#0a0a0a] hover:!border-[#ff6d35] transition-colors"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-[#d7dbe2] !bg-[#f4f6f9] hover:!border-[#ff6d35] transition-colors"
           style={{ left: -6 }}
         />
       )}
@@ -80,7 +80,7 @@ export const BaseNode = memo(({
             <span className="text-xs" style={{ color }}>{icon}</span>
           </div>
         )}
-        <span className="flex-1 truncate text-xs font-semibold text-gray-200">
+        <span className="flex-1 truncate text-xs font-semibold text-slate-800">
           {(d.label as string) ?? label ?? (d.type_slug as string) ?? 'Node'}
         </span>
         {Boolean(d.pinned) && <Pin className="h-3 w-3 text-amber-400" />}
@@ -89,7 +89,7 @@ export const BaseNode = memo(({
 
       {/* Body */}
       {children && (
-        <div className="px-3 py-2 text-xs text-gray-500">
+        <div className="px-3 py-2 text-xs text-slate-500">
           {children}
         </div>
       )}
@@ -99,7 +99,7 @@ export const BaseNode = memo(({
         <Handle
           type="source"
           position={Position.Right}
-          className="!h-3 !w-3 !rounded-full !border-2 !border-[#2a2a2a] !bg-[#0a0a0a] hover:!border-[#ff6d35] transition-colors"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-[#d7dbe2] !bg-[#f4f6f9] hover:!border-[#ff6d35] transition-colors"
           style={{ right: -6 }}
         />
       )}

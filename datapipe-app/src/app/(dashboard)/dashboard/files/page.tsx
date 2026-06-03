@@ -64,8 +64,8 @@ export default function FilesPage() {
     <div className="p-6 space-y-5 max-w-5xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-100">Fichiers</h1>
-          <p className="text-sm text-gray-500">{files.length} fichier{files.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl font-bold text-slate-900">Fichiers</h1>
+          <p className="text-sm text-slate-500">{files.length} fichier{files.length > 1 ? 's' : ''}</p>
         </div>
         <Button onClick={() => inputRef.current?.click()} className="gap-2">
           <Plus className="h-4 w-4" /> Uploader
@@ -74,22 +74,22 @@ export default function FilesPage() {
 
       {/* Drop zone */}
       <div
-        className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 transition-colors cursor-pointer ${isDragging ? 'border-[#ff6d35] bg-[#ff6d35]/5' : 'border-[#2a2a2a] hover:border-[#3a3a3a]'}`}
+        className={`flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 transition-colors cursor-pointer ${isDragging ? 'border-[#ff6d35] bg-[#ff6d35]/5' : 'border-[#d7dbe2] hover:border-[#c3c9d2]'}`}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
       >
         <Upload className={`h-8 w-8 mb-3 ${isDragging ? 'text-[#ff6d35]' : 'text-gray-700'}`} />
-        <p className="text-sm font-medium text-gray-400">Glissez un fichier ici ou cliquez pour parcourir</p>
-        <p className="text-xs text-gray-600 mt-1">CSV, JSON, XLSX — max 100 MB</p>
+        <p className="text-sm font-medium text-slate-600">Glissez un fichier ici ou cliquez pour parcourir</p>
+        <p className="text-xs text-slate-500 mt-1">CSV, JSON, XLSX — max 100 MB</p>
         <input ref={inputRef} type="file" accept={ACCEPTED} className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUpload(e.target.files[0]) }} />
       </div>
 
       {/* Upload progress */}
       {uploadProgress !== null && (
         <div className="space-y-1.5">
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-xs text-slate-500">
             <span>Upload en cours…</span>
             <span>{uploadProgress}%</span>
           </div>
@@ -103,7 +103,7 @@ export default function FilesPage() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
         </div>
       ) : files.length === 0 ? (
-        <div className="text-center py-8 text-gray-600 text-sm">Aucun fichier uploadé</div>
+        <div className="text-center py-8 text-slate-500 text-sm">Aucun fichier uploadé</div>
       ) : (
         <div className="space-y-2">
           {files.map((file) => (
@@ -113,9 +113,9 @@ export default function FilesPage() {
                   <FileText className="h-4 w-4 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-200">{file.name}</p>
+                  <p className="text-sm font-medium text-slate-800">{file.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-gray-600">{formatBytes(file.size_bytes)}</span>
+                    <span className="text-xs text-slate-500">{formatBytes(file.size_bytes)}</span>
                     {file.rows && <span className="text-xs text-gray-700">· {file.rows} lignes</span>}
                     {file.columns && <span className="text-xs text-gray-700">· {file.columns} colonnes</span>}
                     <span className="text-xs text-gray-700">· {getRelativeTime(file.created_at)}</span>

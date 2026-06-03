@@ -73,7 +73,7 @@ export function InspectorFilter({ config, columns, onChange }: Props) {
             value={config.value ?? ''}
             onChange={(e) => update({ value: e.target.value })}
           />
-          <p className="text-[10px] text-gray-600">Pour les nombres, entrez uniquement le chiffre (ex: 42)</p>
+          <p className="text-[10px] text-slate-500">Pour les nombres, entrez uniquement le chiffre (ex: 42)</p>
         </div>
       )}
 

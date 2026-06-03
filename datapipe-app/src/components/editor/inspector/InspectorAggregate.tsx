@@ -93,9 +93,9 @@ export function InspectorAggregate({ config, columns, onChange }: Props) {
         </div>
         <div className="space-y-1">
           {aggs.map((a, i) => (
-            <div key={i} className="flex items-center justify-between rounded bg-[#141414] px-2.5 py-1.5">
+            <div key={i} className="flex items-center justify-between rounded bg-[#ffffff] px-2.5 py-1.5">
               <span className="font-mono text-[10px] text-blue-400">{a.function}({a.column})</span>
-              <button onClick={() => removeAgg(i)}><X className="h-3 w-3 text-gray-600 hover:text-red-400" /></button>
+              <button onClick={() => removeAgg(i)}><X className="h-3 w-3 text-slate-500 hover:text-red-400" /></button>
             </div>
           ))}
           {aggs.length === 0 && <p className="text-[10px] text-gray-700">Aucune agrégation définie</p>}

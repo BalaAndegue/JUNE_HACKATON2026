@@ -128,19 +128,19 @@ export function NodeInspector({ pipelineId }: NodeInspectorProps) {
       case 'export':
         return <InspectorExport config={cfg as never} onChange={(c) => setConfig(c as never)} />
       default:
-        return <p className="text-xs text-gray-600 italic">Pas de configuration pour ce nœud</p>
+        return <p className="text-xs text-slate-500 italic">Pas de configuration pour ce nœud</p>
     }
   }
 
   return (
-    <aside className="flex h-full w-[300px] flex-col border-l border-[#1e1e1e] bg-[#0a0a0a]">
+    <aside className="flex h-full w-[300px] flex-col border-l border-[#e6e8ec] bg-[#f4f6f9]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#1e1e1e] px-4 py-3">
+      <div className="flex items-center justify-between border-b border-[#e6e8ec] px-4 py-3">
         <div className="flex items-center gap-2">
           {typeDef && (
             <span className="text-lg leading-none" style={{ color: typeDef.color }}>{typeDef.icon}</span>
           )}
-          <span className="text-sm font-semibold text-gray-200">{typeDef?.label ?? typeSlug}</span>
+          <span className="text-sm font-semibold text-slate-800">{typeDef?.label ?? typeSlug}</span>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={() => setSelectedNode(null)}>
           <X className="h-4 w-4" />
@@ -171,7 +171,7 @@ export function NodeInspector({ pipelineId }: NodeInspectorProps) {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t border-[#1e1e1e] p-3 flex items-center gap-2">
+      <div className="border-t border-[#e6e8ec] p-3 flex items-center gap-2">
         <Button size="sm" onClick={handleSave} disabled={isSaving} className="flex-1 gap-1.5">
           <Save className="h-3.5 w-3.5" />
           {isSaving ? 'Sauvegarde…' : 'Sauvegarder'}

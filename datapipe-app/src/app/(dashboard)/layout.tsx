@@ -36,8 +36,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-[#0a0a0a]">
-        <div className="w-[220px] border-r border-[#1e1e1e] p-4 space-y-3">
+      <div className="flex h-screen bg-[#f4f6f9]">
+        <div className="w-[220px] border-r border-[#e6e8ec] p-4 space-y-3">
           <Skeleton className="h-8 w-32" />
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
         </div>
@@ -53,7 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     // Tout l'écran est fixe — sidebar + contenu se partagent l'espace en flex
-    <div className="flex h-screen overflow-hidden bg-[#0a0a0a]">
+    <div className="flex h-screen overflow-hidden bg-[#f4f6f9]">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* La navbar est cachée sur l'éditeur pour lui donner toute la hauteur */}

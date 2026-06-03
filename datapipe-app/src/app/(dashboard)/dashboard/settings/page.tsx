@@ -51,7 +51,7 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-2xl">
-      <h1 className="text-xl font-bold text-gray-100">Paramètres</h1>
+      <h1 className="text-xl font-bold text-slate-900">Paramètres</h1>
 
       {/* Profile */}
       <Card>
@@ -118,8 +118,8 @@ export default function SettingsPage() {
         <CardContent>
           <div className="flex items-center justify-between py-2">
             <div>
-              <p className="text-sm font-medium text-gray-300">Supprimer mon compte</p>
-              <p className="text-xs text-gray-600">Toutes vos données seront supprimées définitivement</p>
+              <p className="text-sm font-medium text-slate-700">Supprimer mon compte</p>
+              <p className="text-xs text-slate-500">Toutes vos données seront supprimées définitivement</p>
             </div>
             <Button variant="destructive" size="sm">Supprimer</Button>
           </div>
