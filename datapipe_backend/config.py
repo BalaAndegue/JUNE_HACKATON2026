@@ -25,3 +25,4 @@ class Config:
     GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_WEBHOOK_SECRET = os.getenv('TELEGRAM_WEBHOOK_SECRET', '')
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')

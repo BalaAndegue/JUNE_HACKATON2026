@@ -65,6 +65,22 @@ def _demo_context(chat_id):
     return user.id, pid
 
 
+def _pipeline_summary(pipeline):
+    """Résumé lisible du pipeline : étapes ordonnées + lien éditeur."""
+    from ..engine.executor import _topological_order
+    nodes = {n.id: n for n in pipeline.nodes}
+    if not nodes:
+        return f"📊 {pipeline.name} — pipeline vide."
+    order, _ = _topological_order(list(nodes.keys()), list(pipeline.edges))
+    lines = [f"📊 {pipeline.name} — {len(nodes)} étape(s) :"]
+    for i, nid in enumerate(order, 1):
+        n = nodes[nid]
+        lines.append(f"  {i}. {n.label or n.type_slug}  ·  {n.type_slug}")
+    base = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+    lines.append(f"🔗 Éditeur : {base}/dashboard/pipelines/{pipeline.id}/editor")
+    return '\n'.join(lines)
+
+
 def _execute_plan(chat_id, user_id, pipeline_id, plan):
     steps = plan.get('steps') if plan.get('type') == 'plan' else [plan]
     lines = []
@@ -75,6 +91,11 @@ def _execute_plan(chat_id, user_id, pipeline_id, plan):
             pipeline_id = res['pipeline_id']
             _CHAT_PIPE[chat_id] = pipeline_id
         lines.append(('✅ ' if res.get('ok') else '⚠️ ') + res.get('message', ''))
+    # Résumé du pipeline après les actions
+    pipe = Pipeline.query.get(pipeline_id) if pipeline_id else None
+    if pipe:
+        lines.append('')
+        lines.append(_pipeline_summary(pipe))
     return '\n'.join(lines)
 
 
