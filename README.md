@@ -210,6 +210,10 @@ curl -X POST http://localhost:5000/api/v1/auth/login \
 - Préparation de données pour reporting ou audit.
 - Automatisation de traitements périodiques.
 
+## Documentation complémentaire
+
+- [Modélisation mathématique](docs/MODELISATION_MATHEMATIQUE.md)
+
 ## Collaborateurs
 
 - azangueleonel9@gmail.com
