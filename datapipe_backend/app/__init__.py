@@ -1,13 +1,21 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flasgger import Swagger
 from .extensions import db, jwt, bcrypt
+from .swagger_spec import SWAGGER_TEMPLATE, SWAGGER_CONFIG
 from config import Config
 import os
 
 
-def create_app():
+def create_app(testing=False):
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    if testing:
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.config['JWT_SECRET_KEY'] = 'test-secret'
+        app.config['WTF_CSRF_ENABLED'] = False
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -16,6 +24,8 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     bcrypt.init_app(app)
+
+    Swagger(app, template=SWAGGER_TEMPLATE, config=SWAGGER_CONFIG)
 
     from .routes import register_blueprints
     register_blueprints(app)

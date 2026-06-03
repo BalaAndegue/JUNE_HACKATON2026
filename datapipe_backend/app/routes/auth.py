@@ -30,11 +30,13 @@ def register():
 
     if data.get('org_name'):
         from ..utils import slugify
+        from ..models import Workspace
         slug = slugify(data['org_name'])
         org = Org(name=data['org_name'], slug=slug)
         db.session.add(org)
         db.session.flush()
         db.session.add(OrgMember(org_id=org.id, user_id=user.id, role='owner'))
+        db.session.add(Workspace(org_id=org.id, name='Production', color='#3b82f6'))
 
     db.session.commit()
     return jsonify({
