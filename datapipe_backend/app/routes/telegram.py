@@ -57,6 +57,35 @@ def _download_telegram_file(file_id):
         return None, None
 
 
+def _send_document(chat_id, filename, content, caption='', mime='text/csv'):
+    """Envoie un fichier en pièce jointe (sendDocument, multipart)."""
+    token = current_app.config.get('TELEGRAM_BOT_TOKEN', '')
+    if not token:
+        return None
+    boundary = 'dpBoundary7MA4YWxkTrZu0gW'
+    body = b''
+    for k, v in {'chat_id': str(chat_id), 'caption': caption[:1000]}.items():
+        body += (f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n').encode()
+    body += (f'--{boundary}\r\nContent-Disposition: form-data; name="document"; '
+             f'filename="{filename}"\r\nContent-Type: {mime}\r\n\r\n').encode()
+    body += (content if isinstance(content, bytes) else content.encode()) + f'\r\n--{boundary}--\r\n'.encode()
+    try:
+        req = urllib.request.Request(
+            f'https://api.telegram.org/bot{token}/sendDocument', data=body,
+            headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return json.loads(r.read())
+    except Exception as e:  # noqa: BLE001
+        current_app.logger.error(f"Telegram sendDocument error: {e}")
+        return None
+
+
+def _latest_run(pipeline):
+    from ..models import Run
+    return (Run.query.filter_by(pipeline_id=pipeline.id)
+            .order_by(Run.started_at.desc()).first())
+
+
 def _send(chat_id, text, confirm=False):
     payload = {'chat_id': chat_id, 'text': text}
     if confirm:
@@ -175,9 +204,56 @@ def telegram_webhook():
     if not text or chat_id is None:
         return jsonify({'ok': True})
 
-    if text in ('/start', '/help'):
-        _send(chat_id, "👋 Je pilote DataPipe. Dis-moi par ex. : « masque les clients », "
-                       "« détecte les anomalies puis exécute ». Je propose, tu confirmes.")
+    if text.startswith('/'):
+        user_id, pid = _demo_context(chat_id)
+        pipe = Pipeline.query.get(pid) if pid else None
+        cmd = text.split()[0].lower()
+        arg = text[len(cmd):].strip()
+
+        if cmd in ('/start', '/help'):
+            _send(chat_id, "👋 Je pilote DataPipe.\n"
+                           "Commandes : /pipeline · /run · /new <nom> · /preview · /audit\n"
+                           "Ou écris en clair : « masque les clients puis exécute ».\n"
+                           "Tu peux aussi m'envoyer un fichier CSV/JSON.")
+        elif cmd == '/pipeline':
+            _send(chat_id, _pipeline_summary(pipe) if pipe else "Aucun pipeline courant.")
+        elif cmd == '/new':
+            res = run_action(user_id, 'create_pipeline', {'name': arg or 'Nouveau pipeline'})
+            if res.get('pipeline_id'):
+                _CHAT_PIPE[chat_id] = res['pipeline_id']
+            _send(chat_id, res.get('message', ''))
+        elif cmd == '/run':
+            res = run_action(user_id, 'run_pipeline', {}, pid)
+            pipe = Pipeline.query.get(pid)
+            _send(chat_id, res.get('message', '') + (('\n\n' + _pipeline_summary(pipe)) if pipe else ''))
+        elif cmd == '/preview':
+            run = _latest_run(pipe) if pipe else None
+            if not run or not run.node_results:
+                _send(chat_id, "Exécute d'abord le pipeline (/run).")
+                return jsonify({'ok': True})
+            nid = list(run.node_results.keys())[-1]
+            rows = run.node_results[nid].get('output_preview', [])
+            if not rows:
+                _send(chat_id, "Aucune donnée en sortie.")
+                return jsonify({'ok': True})
+            import csv as _csv, io as _io
+            buf = _io.StringIO()
+            w = _csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+            w.writeheader(); w.writerows(rows)
+            _send_document(chat_id, 'apercu.csv', buf.getvalue(),
+                           caption=f"Aperçu — {len(rows)} ligne(s)")
+        elif cmd == '/audit':
+            run = _latest_run(pipe) if pipe else None
+            if not run:
+                _send(chat_id, "Exécute d'abord le pipeline (/run).")
+                return jsonify({'ok': True})
+            from ..agent_exec import build_audit_report
+            rep = build_audit_report(run, pipe)
+            _send_document(chat_id, 'rapport_audit.json',
+                           json.dumps(rep, indent=2, ensure_ascii=False),
+                           caption="Rapport d'audit conformité", mime='application/json')
+        else:
+            _send(chat_id, "Commande inconnue. Tape /help")
         return jsonify({'ok': True})
 
     plan = plan_from_message(text)

@@ -52,6 +52,47 @@ def ingest_file(user_id, filename, content):
     return f
 
 
+def build_audit_report(run, pipeline):
+    """Rapport de conformité bancaire d'un run (partagé par l'API et le bot Telegram)."""
+    results = run.node_results
+    node_by_id = {n.id: n for n in pipeline.nodes}
+    steps, masked_columns, quality_scores = [], set(), []
+    total_anomalies = 0
+    for nid, res in results.items():
+        node = node_by_id.get(nid)
+        extra = res.get('extra') or {}
+        masked = extra.get('masked_columns') or []
+        for m in masked:
+            masked_columns.add(m.get('column'))
+        if isinstance(extra.get('anomalies'), int):
+            total_anomalies += extra['anomalies']
+        q = (res.get('quality') or {}).get('score')
+        if q is not None:
+            quality_scores.append(q)
+        steps.append({
+            'node': node.label if node else nid,
+            'type': node.type_slug if node else None,
+            'status': res.get('status'),
+            'rows_in': res.get('rows_processed'), 'rows_out': res.get('rows_output'),
+            'masked_columns': [m.get('column') for m in masked],
+            'anomalies_detected': extra.get('anomalies'),
+            'quality_score': q,
+        })
+    return {
+        'report_type': 'compliance_audit',
+        'generated_at': datetime.utcnow().isoformat() + 'Z',
+        'pipeline': {'id': pipeline.id, 'name': pipeline.name},
+        'run': {'id': run.id, 'status': run.status, 'duration_ms': run.duration_ms},
+        'compliance': {
+            'pii_anonymised': len(masked_columns) > 0,
+            'anonymised_columns': sorted(c for c in masked_columns if c),
+            'anomalies_detected': total_anomalies,
+            'final_quality_score': quality_scores[-1] if quality_scores else None,
+        },
+        'steps': steps,
+    }
+
+
 def _user_workspace_id(user_id):
     member = OrgMember.query.filter_by(user_id=user_id).first()
     if not member:

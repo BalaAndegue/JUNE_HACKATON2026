@@ -231,59 +231,8 @@ def run_audit_report(run_id):
     run, pipeline, err = _run_owned(run_id, get_jwt_identity())
     if err:
         return jsonify({'error': err[0]}), err[1]
-
-    results = run.node_results
-    node_by_id = {n.id: n for n in pipeline.nodes}
-
-    steps = []
-    total_masked, total_anomalies = 0, 0
-    masked_columns = set()
-    quality_scores = []
-    for nid, res in results.items():
-        node = node_by_id.get(nid)
-        extra = res.get('extra') or {}
-        masked = extra.get('masked_columns') or []
-        anomalies = extra.get('anomalies')
-        quality = (res.get('quality') or {}).get('score')
-        if quality is not None:
-            quality_scores.append(quality)
-        for m in masked:
-            masked_columns.add(m.get('column'))
-        total_masked += len(masked)
-        if isinstance(anomalies, int):
-            total_anomalies += anomalies
-        steps.append({
-            'node': node.label if node else nid,
-            'type': node.type_slug if node else None,
-            'status': res.get('status'),
-            'rows_in': res.get('rows_processed'),
-            'rows_out': res.get('rows_output'),
-            'duration_ms': res.get('duration_ms'),
-            'masked_columns': [m.get('column') for m in masked],
-            'anomalies_detected': anomalies,
-            'quality_score': quality,
-        })
-
-    return jsonify({
-        'report_type': 'compliance_audit',
-        'generated_at': datetime.utcnow().isoformat() + 'Z',
-        'pipeline': {'id': pipeline.id, 'name': pipeline.name},
-        'run': {
-            'id': run.id,
-            'status': run.status,
-            'trigger': run.trigger,
-            'started_at': run.started_at.isoformat() + 'Z' if run.started_at else None,
-            'finished_at': run.finished_at.isoformat() + 'Z' if run.finished_at else None,
-            'duration_ms': run.duration_ms,
-        },
-        'compliance': {
-            'pii_anonymised': len(masked_columns) > 0,
-            'anonymised_columns': sorted(c for c in masked_columns if c),
-            'anomalies_detected': total_anomalies,
-            'final_quality_score': quality_scores[-1] if quality_scores else None,
-        },
-        'steps': steps,
-    })
+    from ..agent_exec import build_audit_report
+    return jsonify(build_audit_report(run, pipeline))
 
 
 @compat_bp.route('/runs/<run_id>/cancel', methods=['POST'])
