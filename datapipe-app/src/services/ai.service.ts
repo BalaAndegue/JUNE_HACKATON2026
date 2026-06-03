@@ -24,7 +24,24 @@ export interface AgentResult {
   }
 }
 
+export interface PlanAction {
+  type: 'reply' | 'action'
+  message: string
+  action?: string
+  params?: Record<string, unknown>
+  warning?: string | null
+  requires_confirmation?: boolean
+  model?: string
+}
+
 export const aiService = {
+  // Chat "action mode": turns a message into a proposed action (or a reply).
+  // Nothing is executed server-side — the UI confirms, then executes.
+  agentPlan: async (message: string, context?: Record<string, unknown>) => {
+    const res = await api.post<PlanAction>('/api/v1/ai/agent/plan', { message, context })
+    return res.data
+  },
+
   // Controlled AI agent: generates SQL, dry-runs it on a real sample, returns
   // before/after preview + validation for human approval before applying.
   agentTransform: async (description: string, fileId?: string) => {

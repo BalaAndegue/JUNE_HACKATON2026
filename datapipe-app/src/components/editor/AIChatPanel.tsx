@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, Sparkles, Loader2, Zap, ShieldCheck, AlertTriangle, Check } from 'lucide-react'
+import { X, Send, Sparkles, Loader2, Zap, ShieldCheck, AlertTriangle, Check, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useEditorStore } from '@/store/editor.store'
-import { aiService, type AgentResult } from '@/services/ai.service'
+import { aiService, type AgentResult, type PlanAction } from '@/services/ai.service'
 import { nodeService } from '@/services/node.service'
+import { runService } from '@/services/run.service'
+import { pipelineService } from '@/services/pipeline.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
@@ -17,16 +19,20 @@ interface AIChatPanelProps {
 }
 
 export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
-  const { setAIChatOpen, setNodes, setEdges, nodes } = useEditorStore()
+  const {
+    setAIChatOpen, setNodes, setEdges, nodes,
+    setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage, activeRunId,
+  } = useEditorStore()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Bonjour ! Je suis votre assistant DataPipe. Je peux générer des pipelines, du SQL contrôlé (testé sur un échantillon avant exécution), ou répondre à vos questions.',
+      content: "Bonjour ! Dites-moi ce que vous voulez faire (« masque les clients », « exécute le pipeline », « génère le total par type »…). Je propose l'action, vous confirmez, j'agis.",
     },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [agent, setAgent] = useState<AgentResult | null>(null)
+  const [pending, setPending] = useState<PlanAction | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Find a source file in the current graph to dry-run the agent on real data.
@@ -80,20 +86,91 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Chat "mode action": every message goes through the planning agent.
   const handleSend = async () => {
     if (!input.trim() || isLoading) return
-    const userMsg: ChatMessage = { role: 'user', content: input.trim() }
-    setMessages((prev) => [...prev, userMsg])
+    const text = input.trim()
+    setMessages((prev) => [...prev, { role: 'user', content: text }])
     setInput('')
+    setPending(null)
+    setAgent(null)
     setIsLoading(true)
-
     try {
-      const res = await aiService.chat([...messages, userMsg], {
-        pipeline_id: pipelineId,
-      })
-      setMessages((prev) => [...prev, res.message])
+      const plan = await aiService.agentPlan(text, { pipeline_id: pipelineId })
+      setMessages((prev) => [...prev, { role: 'assistant', content: plan.message }])
+      if (plan.type === 'action') setPending(plan)
     } catch {
-      toast.error('Erreur de communication avec l\'IA')
+      toast.error("Erreur de communication avec l'IA")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const download = (content: string, filename: string, mime: string) => {
+    const blob = new Blob([content], { type: mime })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = filename; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Execute a confirmed action via the existing services.
+  const executeAction = async (plan: PlanAction) => {
+    const p = plan.params || {}
+    switch (plan.action) {
+      case 'add_node': {
+        const type = String(p.node_type || 'filter')
+        const node = await nodeService.addNode(pipelineId, {
+          type, label: String(p.label || type), position: { x: 320, y: 320 }, data: { config: {} },
+        })
+        setNodes([...nodes, { id: node.id, type, position: node.position,
+          data: { ...node.data, type_slug: type } } as unknown as import('@xyflow/react').Node])
+        toast.success('Nœud ajouté'); break
+      }
+      case 'run_pipeline': {
+        setRunStatus('running')
+        const r = await runService.execute(pipelineId)
+        setActiveRun(r.run_id); setNodeResults(r.node_results || {})
+        Object.entries(r.node_results || {}).forEach(([id, res]) =>
+          setNodeStatus(id, res.status === 'error' ? 'error' : 'success'))
+        applyLineage(r.node_results || {})
+        setRunStatus(r.status === 'success' ? 'success' : 'failed')
+        toast.success('Pipeline exécuté'); break
+      }
+      case 'generate_sql': {
+        const result = await aiService.agentTransform(String(p.description || ''), sourceFileId)
+        setAgent(result); break   // the agent card handles the apply step
+      }
+      case 'export_pipeline': {
+        const data = await pipelineService.exportPipeline(pipelineId, (p.format === 'json' ? 'json' : 'yaml'))
+        const isYaml = typeof data === 'string'
+        download(isYaml ? (data as string) : JSON.stringify(data, null, 2),
+          `pipeline.${isYaml ? 'yaml' : 'json'}`, isYaml ? 'text/yaml' : 'application/json')
+        toast.success('Pipeline exporté'); break
+      }
+      case 'audit_report': {
+        if (!activeRunId) { toast.error("Exécute d'abord le pipeline"); return }
+        const report = await runService.getAuditReport(activeRunId)
+        download(JSON.stringify(report, null, 2), `rapport_audit.json`, 'application/json')
+        toast.success("Rapport d'audit exporté"); break
+      }
+      default:
+        toast.info('Action proposée — à finaliser sur le canvas.')
+    }
+  }
+
+  const confirmPlan = async () => {
+    if (!pending) return
+    const plan = pending
+    setPending(null)
+    setIsLoading(true)
+    try {
+      await executeAction(plan)
+      if (plan.action !== 'generate_sql') {
+        setMessages((prev) => [...prev, { role: 'assistant', content: '✅ Action effectuée.' }])
+      }
+    } catch {
+      toast.error("L'action a échoué")
     } finally {
       setIsLoading(false)
     }
@@ -199,6 +276,34 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
               </div>
             </div>
           ))}
+          {/* Proposed action card — user confirms before anything happens */}
+          {pending && pending.type === 'action' && (
+            <div className="rounded-xl border border-purple-500/30 bg-white p-3 text-xs shadow-sm">
+              <div className="mb-1.5 flex items-center gap-1.5 font-semibold text-purple-600">
+                <Zap className="h-3.5 w-3.5" /> Action proposée
+              </div>
+              <p className="mb-1.5 text-slate-700">{pending.message}</p>
+              <p className="mb-2 text-[10px] text-slate-500">
+                Action : <code className="rounded bg-slate-100 px-1">{pending.action}</code>
+              </p>
+              {pending.warning && (
+                <div className="mb-2 flex items-start gap-1 text-amber-600">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {pending.warning}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 gap-1.5" onClick={confirmPlan}>
+                  {pending.action === 'run_pipeline'
+                    ? <><Play className="h-3.5 w-3.5" /> Confirmer</>
+                    : <><Check className="h-3.5 w-3.5" /> Confirmer</>}
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => setPending(null)}>
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Controlled-agent card: SQL + explanation + dry-run preview + validation */}
           {agent && (
             <div className="rounded-xl border border-purple-500/30 bg-white p-3 text-xs shadow-sm">
