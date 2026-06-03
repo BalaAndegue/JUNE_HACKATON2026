@@ -90,6 +90,50 @@ def _call_claude(system, messages, model=None, max_tokens=2048):
         return None
 
 
+def _call_openrouter(system, messages, model=None, max_tokens=2048):
+    api_key = current_app.config.get('OPENROUTER_API_KEY', '')
+    if not api_key:
+        return None
+
+    if not model:
+        model = current_app.config.get('OPENROUTER_MODEL', 'anthropic/claude-3.5-haiku')
+
+    try:
+        import urllib.request
+        import json as _json
+
+        formatted_messages = []
+        if system:
+            formatted_messages.append({'role': 'system', 'content': system})
+        formatted_messages.extend(messages)
+
+        payload = _json.dumps({
+            'model': model,
+            'messages': formatted_messages,
+            'max_tokens': max_tokens,
+            'temperature': 0.3,
+        }).encode()
+
+        req = urllib.request.Request(
+            'https://openrouter.ai/api/v1/chat/completions',
+            data=payload,
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://datapipe.ai',
+                'X-Title': 'DataPipe AI Backend'
+            },
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = _json.loads(resp.read())
+            AI_USAGE['tokens_used'] += result.get('usage', {}).get('total_tokens', 0)
+            AI_USAGE['requests'] += 1
+            return result['choices'][0]['message']['content']
+    except Exception as e:
+        current_app.logger.error(f"OpenRouter API Error: {e}")
+        return None
+
+
 
 @ai_bp.route('/generate-transform', methods=['POST'])
 @jwt_required()
@@ -110,10 +154,16 @@ Colonnes disponibles : {', '.join(columns)}
 Utilise {{input}} pour référencer le dataset d'entrée.
 Réponds avec UNIQUEMENT la requête SQL, sans explication."""
 
-    sql = _call_claude(
+    sql = _call_openrouter(
         system="Tu es un expert SQL pour l'ETL bancaire.",
         messages=[{'role': 'user', 'content': f"Génère une requête SQL pour : \"{description}\". Colonnes disponibles : {', '.join(columns)}. Utilise {{input}} pour référencer le dataset d'entrée. Réponds avec UNIQUEMENT la requête SQL, sans explication."}]
     )
+
+    if not sql:
+        sql = _call_claude(
+            system="Tu es un expert SQL pour l'ETL bancaire.",
+            messages=[{'role': 'user', 'content': f"Génère une requête SQL pour : \"{description}\". Colonnes disponibles : {', '.join(columns)}. Utilise {{input}} pour référencer le dataset d'entrée. Réponds avec UNIQUEMENT la requête SQL, sans explication."}]
+        )
 
     if not sql:
         sql = _call_openai([{'role': 'user', 'content': prompt}])
@@ -433,10 +483,16 @@ def suggest_pipeline():
 Réponds en JSON avec : name, description, nodes (liste de {{type, label}}), edges (liste de {{source_idx, target_idx}}).
 Types disponibles : csv_reader, json_reader, sql_query, filter, map, aggregate, join, sort, dedup, sql_transform, ai_transform, sql_write, file_export, notification_send."""
     
-    ai_response = _call_claude(
+    ai_response = _call_openrouter(
         system=system_prompt,
         messages=[{'role': 'user', 'content': user_prompt}]
     )
+    
+    if not ai_response:
+        ai_response = _call_claude(
+            system=system_prompt,
+            messages=[{'role': 'user', 'content': user_prompt}]
+        )
     
     if not ai_response:
         # Tentative OpenAI
@@ -555,11 +611,18 @@ FORMAT DE RÉPONSE (JSON STRICT, aucun texte autour) :
 
 Réponds UNIQUEMENT avec le JSON valide."""
 
-    ai_response = _call_claude(
+    ai_response = _call_openrouter(
         system=system_prompt,
         messages=[{'role': 'user', 'content': f"Génère un pipeline pour : {prompt}"}],
         max_tokens=3000
     )
+
+    if not ai_response:
+        ai_response = _call_claude(
+            system=system_prompt,
+            messages=[{'role': 'user', 'content': f"Génère un pipeline pour : {prompt}"}],
+            max_tokens=3000
+        )
     
     if not ai_response:
         ai_response = _call_openai(
@@ -620,10 +683,15 @@ def explain_node():
 
     if node_type not in explanations:
         prompt = f"Explique en 2-3 phrases simples ce que fait le nœud ETL de type '{node_type}' avec la config: {config}"
-        ai_resp = _call_claude(
+        ai_resp = _call_openrouter(
             system="Tu es un expert ETL qui explique le rôle des nœuds de pipeline de données.",
             messages=[{'role': 'user', 'content': prompt}]
         )
+        if not ai_resp:
+            ai_resp = _call_claude(
+                system="Tu es un expert ETL qui explique le rôle des nœuds de pipeline de données.",
+                messages=[{'role': 'user', 'content': prompt}]
+            )
         if not ai_resp:
             ai_resp = _call_openai([{'role': 'user', 'content': prompt}])
         if ai_resp:
@@ -780,7 +848,10 @@ Réponds en français de manière concise et pratique."""
 
     AI_SESSIONS[session_id].append({'role': 'user', 'content': data['message']})
 
-    ai_response = _call_claude(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
+    ai_response = _call_openrouter(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
+
+    if not ai_response:
+        ai_response = _call_claude(system=system_prompt, messages=AI_SESSIONS[session_id][-10:])
     
     if not ai_response:
         messages = [{'role': 'system', 'content': system_prompt}] + AI_SESSIONS[session_id][-10:]
@@ -795,7 +866,10 @@ Réponds en français de manière concise et pratique."""
 
     model_used = 'datapipe-analyst'
     if not used_mock:
-        model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
+        if current_app.config.get('OPENROUTER_API_KEY'):
+            model_used = current_app.config.get('OPENROUTER_MODEL', 'anthropic/claude-3.5-haiku')
+        else:
+            model_used = 'claude-3-5-haiku-20241022' if current_app.config.get('ANTHROPIC_API_KEY') else 'gpt-4o-mini'
 
     return jsonify({
         'session_id': session_id,
