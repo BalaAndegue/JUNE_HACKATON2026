@@ -46,8 +46,30 @@ def _post(url, payload):
         return None
 
 
+COMMANDS = [
+    {"command": "pipeline", "description": "Résumé du pipeline + lien éditeur"},
+    {"command": "run", "description": "Exécuter le pipeline"},
+    {"command": "new", "description": "Créer un pipeline : /new <nom>"},
+    {"command": "preview", "description": "Aperçu des données (CSV)"},
+    {"command": "audit", "description": "Rapport d'audit conformité (JSON)"},
+    {"command": "anomalies", "description": "Transactions suspectes"},
+    {"command": "chart", "description": "Graphique du résultat (image)"},
+    {"command": "help", "description": "Aide"},
+]
+
+
+def _register_commands():
+    """Affiche le menu « / » dans Telegram."""
+    try:
+        _post(f'{API}/setMyCommands', {'commands': COMMANDS})
+        print("   Menu de commandes enregistré.")
+    except Exception:
+        pass
+
+
 def main():
     print(f"🤖 Bot en polling. Webhook local: {WEBHOOK}")
+    _register_commands()
     print("   Écris à ton bot sur Telegram (/start).")
     offset = 0
     while True:
