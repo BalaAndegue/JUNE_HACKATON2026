@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["BALA_backend"]
+    branches: ["BACKEND"]
 
 env:
   REGISTRY: ghcr.io
