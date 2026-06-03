@@ -58,6 +58,20 @@ class TestNodes:
                           headers=auth_headers)
         assert resp.status_code == 200
 
+    def test_delete_node(self, client, auth_headers, pipeline_id):
+        node = post_json(client, f'{PBASE}/{pipeline_id}/nodes', {
+            'type': 'map',
+            'label': 'To Delete',
+            'position': {'x': 10, 'y': 10},
+        }, headers=auth_headers).get_json()
+
+        del_resp = client.delete(f'{PBASE}/{pipeline_id}/nodes/{node["id"]}', headers=auth_headers)
+        assert del_resp.status_code == 200
+        assert del_resp.get_json()['message'] == 'Node deleted'
+
+        get_resp = client.get(f'{PBASE}/{pipeline_id}/nodes/{node["id"]}', headers=auth_headers)
+        assert get_resp.status_code == 404
+
     def test_bulk_create_nodes(self, client, auth_headers, pipeline_id):
         resp = post_json(client, f'{PBASE}/{pipeline_id}/nodes/bulk', {
             'nodes': [

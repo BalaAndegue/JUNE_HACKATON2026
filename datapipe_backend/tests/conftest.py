@@ -4,6 +4,7 @@ Utilise une base SQLite en mémoire — chaque session de test repart de zéro.
 """
 import pytest
 import json
+import io
 
 from app import create_app
 from app.extensions import db as _db
@@ -59,6 +60,13 @@ def delete_json(client, url, data=None, headers=None):
         kwargs['data'] = json.dumps(data)
         kwargs['content_type'] = 'application/json'
     return client.delete(url, **kwargs)
+
+
+def post_multipart(client, url, form=None, file_field='file', filename='data.csv',
+                   content=b'', content_type='text/csv', headers=None):
+    data = dict(form or {})
+    data[file_field] = (io.BytesIO(content), filename, content_type)
+    return client.post(url, data=data, content_type='multipart/form-data', headers=headers or {})
 
 
 # ─────────────────────────────── USER / AUTH ────────────────────────────────
