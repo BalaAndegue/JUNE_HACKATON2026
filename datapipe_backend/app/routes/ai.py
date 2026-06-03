@@ -517,25 +517,10 @@ def _plan_steps(message):
     return None
 
 
-@ai_bp.route('/agent/plan', methods=['POST'])
-@jwt_required()
-def agent_plan():
-    """
-    Chat « mode action » : transforme un message en proposition d'action structurée
-    (ou réponse texte). N'EXÉCUTE RIEN — le front affiche l'action, l'utilisateur
-    confirme, puis l'exécution se fait via les endpoints existants.
-    """
-    data = request.get_json() or {}
-    message = data.get('message')
-    if not message and isinstance(data.get('messages'), list):
-        message = next((m.get('content') for m in reversed(data['messages'])
-                        if m.get('role') == 'user'), None)
-    if not message:
-        return jsonify({'error': 'message is required'}), 400
-
-    context = data.get('context') or {}
-    columns = context.get('columns') or []
-
+def plan_from_message(message, columns=None):
+    """Core planner reused by the web endpoint AND the Telegram bot.
+    Returns a plan dict: {type: reply|action|plan, ...}."""
+    columns = columns or []
     system = (
         "Tu es DataPipe Agent, un assistant qui PILOTE une plateforme ETL bancaire. "
         "À partir du message de l'utilisateur, tu réponds en JSON STRICT.\n"
@@ -597,7 +582,22 @@ def agent_plan():
             plan['requires_confirmation'] = True
 
     plan['model'] = _llm_model_name() if raw else 'datapipe-analyst'
-    return jsonify(plan)
+    return plan
+
+
+@ai_bp.route('/agent/plan', methods=['POST'])
+@jwt_required()
+def agent_plan():
+    """Chat « mode action » : message -> proposition d'action/plan (sans exécuter)."""
+    data = request.get_json() or {}
+    message = data.get('message')
+    if not message and isinstance(data.get('messages'), list):
+        message = next((m.get('content') for m in reversed(data['messages'])
+                        if m.get('role') == 'user'), None)
+    if not message:
+        return jsonify({'error': 'message is required'}), 400
+    columns = (data.get('context') or {}).get('columns') or []
+    return jsonify(plan_from_message(message, columns))
 
 
 # ─── Mock Intelligent Constantes & Helpers ─────────────────────────────────────

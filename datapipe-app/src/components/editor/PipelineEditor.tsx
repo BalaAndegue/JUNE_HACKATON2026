@@ -24,8 +24,39 @@ export function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
   const {
     setPipeline, setNodeTypes,
+    setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage,
     isInspectorOpen, isConsoleOpen, setConsoleOpen, isAIChatOpen,
   } = useEditorStore()
+
+  // Real-time: redraw live when the Telegram bot (or another client) changes this pipeline.
+  useEffect(() => {
+    if (pipelineId.startsWith('demo-')) return
+    const env = process.env.NEXT_PUBLIC_API_URL
+    const base = (env && !env.includes('localhost'))
+      ? env
+      : (typeof window !== 'undefined'
+          ? `${window.location.protocol}//${window.location.hostname}:5000`
+          : 'http://localhost:5000')
+    const es = new EventSource(`${base}/api/v1/pipelines/${pipelineId}/events`)
+    es.onmessage = async (e) => {
+      try {
+        const ev = JSON.parse(e.data) as { type: string; payload?: Record<string, unknown> }
+        if (ev.type === 'pipeline.updated') {
+          const p = await pipelineService.get(pipelineId)
+          setPipeline(p)
+        } else if (ev.type === 'run.finished') {
+          const nr = (ev.payload?.node_results || {}) as Record<string, { status?: string }>
+          if (ev.payload?.run_id) setActiveRun(String(ev.payload.run_id))
+          setNodeResults(nr as never)
+          Object.entries(nr).forEach(([id, res]) =>
+            setNodeStatus(id, res.status === 'error' ? 'error' : 'success'))
+          applyLineage(nr as never)
+          setRunStatus(ev.payload?.status === 'success' ? 'success' : 'failed')
+        }
+      } catch { /* ignore */ }
+    }
+    return () => es.close()
+  }, [pipelineId, setPipeline, setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage])
 
   useEffect(() => {
     const load = async () => {

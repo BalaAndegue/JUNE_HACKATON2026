@@ -8,9 +8,12 @@ the client expects, delegating to the real engine and AI logic.
 
 Every route here is covered by tests in tests/integration/test_compat.py.
 """
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+import queue as _queue
+
+from .. import realtime
 
 from ..extensions import db
 from ..models import Run, RunLog, Pipeline, File
@@ -99,6 +102,29 @@ def dry_run_alias(pipeline_id):
         'estimated_duration_s': max(1, len(pipeline.nodes) // 2),
         'estimated_rows_processed': 0,
     })
+
+
+@compat_bp.route('/pipelines/<pipeline_id>/events', methods=['GET'])
+def pipeline_events(pipeline_id):
+    """SSE: real-time pipeline change events (used by the editor to redraw live).
+    No JWT: EventSource can't send headers; events are low-sensitivity notifications."""
+    q = realtime.subscribe(pipeline_id)
+
+    def stream():
+        try:
+            yield "retry: 3000\n\n"
+            while True:
+                try:
+                    msg = q.get(timeout=20)
+                    yield f"data: {msg}\n\n"
+                except _queue.Empty:
+                    yield ": keep-alive\n\n"
+        finally:
+            realtime.unsubscribe(pipeline_id, q)
+
+    return Response(stream(), mimetype='text/event-stream',
+                    headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no',
+                             'Access-Control-Allow-Origin': '*'})
 
 
 @compat_bp.route('/runs/<run_id>', methods=['GET'])
