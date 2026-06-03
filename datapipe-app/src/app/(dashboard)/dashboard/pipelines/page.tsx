@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { pipelineService } from '@/services/pipeline.service'
+import api from '@/lib/axios'
 import { getRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/store/auth.store'
@@ -31,10 +32,24 @@ export default function PipelinesPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [newName, setNewName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [wsId, setWsId] = useState<string | null>(null)
+
+  // Resolve the real workspace of the logged-in user (orgs -> workspaces).
+  useEffect(() => {
+    if (isDemoMode) return
+    ;(async () => {
+      try {
+        const orgs = (await api.get('/api/v1/orgs')).data.orgs
+        if (!orgs?.length) return
+        const ws = (await api.get(`/api/v1/orgs/${orgs[0].id}/workspaces`)).data.workspaces
+        if (ws?.length) setWsId(ws[0].id)
+      } catch { /* ignore */ }
+    })()
+  }, [isDemoMode])
 
   useEffect(() => {
     loadPipelines()
-  }, [search])
+  }, [search, wsId])
 
   const DEMO_PIPELINES: Pipeline[] = [
     { id: 'demo-sales', name: 'Analyse des ventes 2024', description: 'CSV → Filtre → Agrégation → Chart', status: 'active', nodes_count: 4, last_run_status: 'success', last_run_at: new Date(Date.now() - 3600000).toISOString(), workspace_id: 'demo', created_at: '', updated_at: '' },
@@ -48,9 +63,10 @@ export default function PipelinesPage() {
       setPipelines(DEMO_PIPELINES)
       return
     }
+    if (!wsId) { setIsLoading(false); return }
     setIsLoading(true)
     try {
-      const res = await pipelineService.list({ workspace_id: 'default', search, per_page: 50 })
+      const res = await pipelineService.list({ workspace_id: wsId, search, per_page: 50 })
       setPipelines(res.data)
     } catch {
       toast.error('Erreur de chargement')
@@ -61,9 +77,10 @@ export default function PipelinesPage() {
 
   const handleCreate = async () => {
     if (!newName.trim()) return
+    if (!wsId) { toast.error('Workspace introuvable'); return }
     setIsCreating(true)
     try {
-      const p = await pipelineService.create({ name: newName, workspace_id: 'default' })
+      const p = await pipelineService.create({ name: newName, workspace_id: wsId })
       toast.success('Pipeline créé')
       setShowCreate(false)
       setNewName('')
