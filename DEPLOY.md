@@ -1,7 +1,41 @@
-# Déploiement DataPipe sur un VPS
+# Lancer & déployer DataPipe
 
-Stack conteneurisée : **backend** (Flask + gunicorn, :5000) + **frontend** (Next.js standalone, :3000).
-La base est **SQLite** (volume persistant). Aucune autre dépendance.
+Stack : **backend** (Flask, :5000) + **frontend** (Next.js, :3000) + **bot Telegram** (optionnel).
+Base **SQLite**. Branche : **`blhack`** (sur les dépôts BalaAndegue et Delmat).
+
+---
+
+## 🖥️ Lancement en LOCAL (développement)
+
+**Terminal A — backend** (mono-process : nécessaire pour le SSE temps réel) :
+```bash
+cd datapipe_backend
+python -m venv .venv && source .venv/bin/activate     # fish: source .venv/bin/activate.fish
+pip install -r requirements.txt
+cp .env.example .env        # y mettre GROQ_API_KEY (+ TELEGRAM_BOT_TOKEN si bot)
+python run.py               # http://localhost:5000  (Swagger: /apidocs)
+```
+
+**Terminal B — frontend** :
+```bash
+cd datapipe-app
+npm install
+npm run dev                 # http://localhost:3000  -> /demo pour entrer
+```
+
+**Terminal C — bot Telegram (optionnel, sans URL publique)** :
+```bash
+cd datapipe_backend && source .venv/bin/activate
+python scripts/telegram_bot.py     # poll Telegram -> webhook local
+```
+Puis écris à ton bot (@Data_Pipe_Bot) : « masque les clients puis exécute ».
+Garde l'éditeur web ouvert sur le pipeline → il se redessine en direct.
+
+---
+
+## ☁️ Déploiement en PRODUCTION (VPS, conteneurs)
+
+Stack conteneurisée : backend (gunicorn) + frontend (standalone) via Docker.
 
 ## Prérequis sur le VPS
 - Docker + Docker Compose v2 (`docker compose version`)
@@ -18,7 +52,7 @@ sudo usermod -aG docker $USER   # puis reconnecte-toi
 ```bash
 git clone https://github.com/BalaAndegue/JUNE_HACKATON2026.git
 cd JUNE_HACKATON2026
-git checkout Blhack_full
+git checkout blhack
 
 # 1) créer le .env backend (clés IA + secrets)
 cp datapipe_backend/.env.example datapipe_backend/.env
@@ -69,3 +103,11 @@ et ajoute les secrets repo : `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`.
 - [ ] `SECRET_KEY` / `JWT_SECRET_KEY` forts dans `.env` (pas les valeurs par défaut)
 - [ ] Restreindre le CORS au domaine (actuellement `*`) — `app/__init__.py`
 - [ ] (Optionnel) PostgreSQL : `DATABASE_URL=postgresql://...` dans `.env` + `pip install psycopg2-binary`
+
+## 🤖 Bot Telegram en production (webhook)
+Une fois le backend public en HTTPS (`https://TON-DOMAINE`), enregistre le webhook **une fois** :
+```bash
+curl "https://api.telegram.org/bot<TON_TOKEN>/setWebhook?url=https://TON-DOMAINE/api/v1/telegram/webhook"
+```
+Mets `TELEGRAM_BOT_TOKEN` (+ `FRONTEND_URL=https://TON-DOMAINE:3000` et un `TELEGRAM_WEBHOOK_SECRET`) dans `.env`.
+En prod le **webhook remplace le poller** (pas besoin de lancer `telegram_bot.py`).
