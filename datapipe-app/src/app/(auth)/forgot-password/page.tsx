@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#f4f6f9] p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#eaedf2] p-4">
       <div className="mb-8 flex items-center gap-3">
         <Image src="/logo.png" alt="DataPipe" width={56} height={56} className="rounded-xl" />
         <span className="text-xl font-bold tracking-tight text-slate-900">DataPipe</span>

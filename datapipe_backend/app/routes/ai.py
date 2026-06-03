@@ -174,23 +174,43 @@ def _agent_sql_and_explanation(description, columns):
         except Exception:
             pass
 
-    # Heuristic fallback (no API key) — still produces runnable SQL.
+    # Heuristic fallback (no API key) — column-aware so the generated SQL runs
+    # against the actual dataset (e.g. `amount` vs `montant`).
     desc = description.lower()
+    cols_lower = {c.lower(): c for c in columns}
+
+    def pick(*candidates, contains=None):
+        for cand in candidates:
+            if cand in cols_lower:
+                return cols_lower[cand]
+        if contains:
+            for low, orig in cols_lower.items():
+                if any(k in low for k in contains):
+                    return orig
+        return None
+
+    amount = pick('montant', 'amount', 'value', 'total', contains=['montant', 'amount', 'mont']) or (columns[0] if columns else 'montant')
+    group = pick('transaction_type', 'type', 'statut', 'status', 'category', 'region',
+                 contains=['type', 'categ', 'statut', 'region'])
+
     if 'anomal' in desc or 'suspect' in desc:
-        sql = ("SELECT * FROM {input} WHERE TRY_CAST(montant AS DOUBLE) < 0 "
-               "OR TRY_CAST(montant AS DOUBLE) > 5000000")
-        expl = "Sélectionne les transactions négatives ou supérieures à 5 000 000."
+        sql = (f"SELECT * FROM {{input}} WHERE TRY_CAST({amount} AS DOUBLE) < 0 "
+               f"OR TRY_CAST({amount} AS DOUBLE) > 5000000")
+        expl = f"Sélectionne les transactions où {amount} est négatif ou supérieur à 5 000 000."
     elif 'doublon' in desc or 'dédoublon' in desc or 'duplicat' in desc:
         sql = "SELECT DISTINCT * FROM {input}"
         expl = "Supprime les lignes en double."
-    elif 'somme' in desc or 'total' in desc or 'agrég' in desc or 'mois' in desc:
-        sql = ("SELECT transaction_type, SUM(TRY_CAST(montant AS DOUBLE)) AS total, "
-               "COUNT(*) AS nb FROM {input} GROUP BY transaction_type")
-        expl = "Agrège le montant total et le nombre de transactions par type."
+    elif 'somme' in desc or 'total' in desc or 'agrég' in desc or 'mois' in desc or 'group' in desc:
+        if group:
+            sql = (f"SELECT {group}, SUM(TRY_CAST({amount} AS DOUBLE)) AS total, "
+                   f"COUNT(*) AS nb FROM {{input}} GROUP BY {group} ORDER BY total DESC")
+            expl = f"Agrège la somme de {amount} et le nombre de lignes par {group}."
+        else:
+            sql = f"SELECT SUM(TRY_CAST({amount} AS DOUBLE)) AS total, COUNT(*) AS nb FROM {{input}}"
+            expl = f"Calcule la somme de {amount} et le nombre total de lignes."
     else:
-        col = next((c for c in columns if c.lower() in ('montant', 'amount')), 'montant')
-        sql = f"SELECT * FROM {{input}} WHERE TRY_CAST({col} AS DOUBLE) > 0"
-        expl = f"Filtre les lignes où {col} est positif."
+        sql = f"SELECT * FROM {{input}} WHERE TRY_CAST({amount} AS DOUBLE) > 0"
+        expl = f"Filtre les lignes où {amount} est positif."
     return sql, expl, True
 
 

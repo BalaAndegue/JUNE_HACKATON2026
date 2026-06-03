@@ -100,7 +100,7 @@ export function NodeDrawer({ pipelineId }: NodeDrawerProps) {
         style={{
           width: 260,
           height: '100%',
-          background: '#f4f6f9',
+          background: '#eaedf2',
           borderLeft: '1px solid rgba(15,23,42,0.07)',
           transform: open ? 'translateX(0)' : 'translateX(100%)',
           transition: 'transform 0.22s cubic-bezier(0.16,1,0.3,1)',

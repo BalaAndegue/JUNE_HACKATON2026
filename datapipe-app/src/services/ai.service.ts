@@ -4,7 +4,36 @@ import type {
   ChatMessage, ChatResponse, AIUsage, ColumnSchema,
 } from '@/types'
 
+export interface AgentResult {
+  description: string
+  generated_sql: string
+  explanation: string
+  model: string
+  validation: { safe: boolean; issues: string[] }
+  status: string
+  sample?: {
+    rows_in: number
+    rows_out: number
+    columns_before: string[]
+    columns_after: string[]
+    preview_before: Array<Record<string, unknown>>
+    preview_after: Array<Record<string, unknown>>
+    quality_before?: { score: number }
+    quality_after?: { score: number }
+    note?: string
+  }
+}
+
 export const aiService = {
+  // Controlled AI agent: generates SQL, dry-runs it on a real sample, returns
+  // before/after preview + validation for human approval before applying.
+  agentTransform: async (description: string, fileId?: string) => {
+    const res = await api.post<AgentResult>('/api/v1/ai/agent/transform', {
+      description, file_id: fileId,
+    })
+    return res.data
+  },
+
   generatePipeline: async (prompt: string, schema?: ColumnSchema[], context?: Record<string, unknown>) => {
     const res = await api.post<GeneratedPipeline>('/api/v1/ai/generate/pipeline', { prompt, schema, context })
     return res.data

@@ -95,7 +95,7 @@ export function InspectorChart({ config, columns, onChange }: Props) {
           {COLORS.map(c => (
             <button
               key={c}
-              className={`h-7 w-7 rounded-full transition-all ${config.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[#f4f6f9]' : ''}`}
+              className={`h-7 w-7 rounded-full transition-all ${config.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-[#eaedf2]' : ''}`}
               style={{ background: c }}
               onClick={() => update({ color: c })}
             />

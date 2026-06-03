@@ -51,7 +51,7 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
 
   return (
     <div
-      className="flex flex-col border-t border-[#e6e8ec] bg-[#f4f6f9]"
+      className="flex flex-col border-t border-[#e6e8ec] bg-[#eaedf2]"
       style={{ height }}
     >
       {/* Console header */}
@@ -117,7 +117,7 @@ export function RunConsole({ height, onClose }: RunConsoleProps) {
               </p>
             )}
             {logs.map((log, i) => (
-              <div key={i} className="flex gap-3 py-0.5 border-b border-[#ffffff]">
+              <div key={i} className="flex gap-3 py-0.5 border-b border-[#e6e8ec]">
                 <span className="text-gray-700 shrink-0">{log.ts}</span>
                 <span className={cn('shrink-0 w-14', LOG_COLORS[log.level] ?? 'text-slate-500')}>
                   {log.level}

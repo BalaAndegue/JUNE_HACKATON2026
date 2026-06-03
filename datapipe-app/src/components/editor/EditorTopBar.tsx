@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Play, Square, RotateCcw, Save, ChevronLeft, Zap,
+  Play, Square, RotateCcw, Save, ChevronLeft, Zap, Download,
   Clock, History, Sparkles, Terminal, CheckCircle2, XCircle, Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,7 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
   const [isSaving, setIsSaving] = useState(false)
   const {
     pipeline, nodes, edges, isDirty, isRunning, runStatus,
-    activeRunId, setActiveRun, setRunStatus, setNodeStatus, setNodeResults,
+    activeRunId, setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage,
     resetRun, isConsoleOpen, setConsoleOpen, setAIChatOpen,
   } = useEditorStore()
 
@@ -62,12 +62,32 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
       Object.entries(result.node_results || {}).forEach(([nodeId, res]) => {
         setNodeStatus(nodeId, res.status === 'error' ? 'error' : 'success')
       })
+      applyLineage(result.node_results || {})
       const ok = result.status === 'success'
       setRunStatus(ok ? 'success' : 'failed')
       toast[ok ? 'success' : 'error'](ok ? 'Run terminé avec succès' : 'Run échoué')
     } catch {
       toast.error('Erreur lors du lancement')
       setRunStatus('failed')
+    }
+  }
+
+  const handleExport = async () => {
+    try {
+      const data = await pipelineService.exportPipeline(pipelineId, 'yaml')
+      const isYaml = typeof data === 'string'
+      const content = isYaml ? (data as string) : JSON.stringify(data, null, 2)
+      const ext = isYaml ? 'yaml' : 'json'
+      const blob = new Blob([content], { type: isYaml ? 'text/yaml' : 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${(pipeline?.name || 'pipeline').replace(/\s+/g, '_')}.${ext}`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`Pipeline exporté (${ext.toUpperCase()} déployable)`)
+    } catch {
+      toast.error('Export impossible')
     }
   }
 
@@ -92,7 +112,7 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
     : null
 
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#e6e8ec] bg-[#f4f6f9] px-4">
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#e6e8ec] bg-[#eaedf2] px-4">
       {/* Left */}
       <div className="flex items-center gap-2">
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#ff6d35]/15">
@@ -155,6 +175,15 @@ export function EditorTopBar({ pipelineId }: EditorTopBarProps) {
         </Tooltip>
 
         <Separator orientation="vertical" className="h-5 mx-1" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon-sm" onClick={handleExport}>
+              <Download className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Exporter le pipeline (YAML déployable)</TooltipContent>
+        </Tooltip>
 
         <Button
           variant="outline"

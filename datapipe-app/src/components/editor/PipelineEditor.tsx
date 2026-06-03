@@ -64,8 +64,8 @@ export function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-full w-full flex-col bg-[#f4f6f9]">
-        <div className="h-12 border-b border-[#e6e8ec] bg-[#f4f6f9]" />
+      <div className="flex h-full w-full flex-col bg-[#eaedf2]">
+        <div className="h-12 border-b border-[#e6e8ec] bg-[#eaedf2]" />
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 p-8 space-y-4">
             <Skeleton className="h-32 w-48 rounded-xl" />
@@ -78,7 +78,7 @@ export function PipelineEditor({ pipelineId }: PipelineEditorProps) {
 
   return (
     <ReactFlowProvider>
-      <div className="flex h-full w-full flex-col overflow-hidden bg-[#f4f6f9]">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-[#eaedf2]">
         {/* Top bar */}
         <EditorTopBar pipelineId={pipelineId} />
 

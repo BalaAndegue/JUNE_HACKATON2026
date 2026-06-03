@@ -41,7 +41,7 @@ export function CanvasControls({ pipelineId }: CanvasControlsProps) {
 
   const {
     isRunning, runStatus,
-    activeRunId, setActiveRun, setRunStatus, setNodeStatus, setNodeResults,
+    activeRunId, setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage,
     resetRun,
   } = useEditorStore()
 
@@ -59,6 +59,7 @@ export function CanvasControls({ pipelineId }: CanvasControlsProps) {
       Object.entries(result.node_results || {}).forEach(([nodeId, res]) => {
         setNodeStatus(nodeId, res.status === 'error' ? 'error' : 'success')
       })
+      applyLineage(result.node_results || {})
       const ok = result.status === 'success'
       setRunStatus(ok ? 'success' : 'failed')
       toast[ok ? 'success' : 'error'](ok ? 'Run terminé' : 'Run échoué')
@@ -66,7 +67,7 @@ export function CanvasControls({ pipelineId }: CanvasControlsProps) {
       toast.error("Erreur lors de l'exécution")
       setRunStatus('failed')
     }
-  }, [pipelineId, isDemoMode, setActiveRun, setRunStatus, setNodeStatus, setNodeResults])
+  }, [pipelineId, isDemoMode, setActiveRun, setRunStatus, setNodeStatus, setNodeResults, applyLineage])
 
   const handleCancel = useCallback(async () => {
     if (!activeRunId) return

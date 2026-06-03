@@ -228,7 +228,7 @@ function AIAnimatedCard() {
     <div
       ref={ref}
       className="relative overflow-hidden rounded-2xl"
-      style={{ background: '#f4f6f9', border: '1px solid rgba(255,109,53,0.18)' }}
+      style={{ background: '#eaedf2', border: '1px solid rgba(255,109,53,0.18)' }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 border-b px-4 py-3"
@@ -252,7 +252,7 @@ function AIAnimatedCard() {
 
       {/* Code area */}
       <div className="mx-4 mb-4 rounded-xl overflow-hidden"
-        style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.07)', minHeight: 130 }}>
+        style={{ background: '#eaedf2', border: '1px solid rgba(15,23,42,0.07)', minHeight: 130 }}>
         <div className="flex items-center gap-1.5 border-b px-3 py-2"
           style={{ borderColor: 'rgba(15,23,42,0.06)' }}>
           <div className="h-2 w-2 rounded-full bg-red-500/60" />
@@ -355,7 +355,7 @@ function BentoGrid() {
             </div>
             <h3 className="text-sm font-bold text-slate-900">IA Claude</h3>
             <p className="mt-1 text-xs text-slate-500">Décrivez, le code est généré.</p>
-            <div className="mt-3 rounded-lg p-2.5" style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.06)' }}>
+            <div className="mt-3 rounded-lg p-2.5" style={{ background: '#eaedf2', border: '1px solid rgba(15,23,42,0.06)' }}>
               <p className="text-[9px] text-[#79c0ff] font-mono">df[&quot;tranche&quot;] = pd.cut(...</p>
             </div>
           </TiltCard>
@@ -490,7 +490,7 @@ function HeroCanvas() {
   useEffect(() => { const t = setTimeout(() => setOn(true), 300); return () => clearTimeout(t) }, [])
 
   return (
-    <div className="relative h-[230px] w-full overflow-hidden rounded-b-xl" style={{ background: '#f4f6f9' }}>
+    <div className="relative h-[230px] w-full overflow-hidden rounded-b-xl" style={{ background: '#eaedf2' }}>
       <div className="absolute inset-0" style={{
         backgroundImage: 'radial-gradient(circle, rgba(15,23,42,0.07) 1px, transparent 1px)',
         backgroundSize: '22px 22px',
@@ -509,7 +509,7 @@ function HeroCanvas() {
       {HERO_NODES.map((n, i) => (
         <div key={i} className="absolute rounded-xl border-[1.5px] overflow-hidden group cursor-default transition-all duration-200 hover:scale-105"
           style={{
-            left: n.x, top: 72, width: 172, borderColor: n.c + '55', background: '#f4f6f9',
+            left: n.x, top: 72, width: 172, borderColor: n.c + '55', background: '#eaedf2',
             opacity: on ? 1 : 0, transform: on ? 'none' : 'translateY(12px)',
             transition: `opacity 0.5s ease ${i * 120 + 200}ms, transform 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 120 + 200}ms`,
           }}
@@ -517,8 +517,8 @@ function HeroCanvas() {
           <div className="px-3 py-1.5 text-[10px] font-bold transition-colors"
             style={{ background: n.c + '18', color: n.c }}>{n.label}</div>
           <div className="px-3 py-1.5 text-[10px] text-slate-500 font-mono">{n.sub}</div>
-          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#f4f6f9]" style={{ borderColor: n.c }} />
-          <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#f4f6f9]" style={{ borderColor: n.c }} />
+          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#eaedf2]" style={{ borderColor: n.c }} />
+          <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-[1.5px] bg-[#eaedf2]" style={{ borderColor: n.c }} />
         </div>
       ))}
       <div className="absolute bottom-4 right-5 flex items-center gap-2 rounded-full border px-3 py-1.5"
@@ -605,7 +605,7 @@ function ActorsSection() {
           <div className="flex-1">
             <TiltCard key={key}
               className="rounded-2xl p-6"
-              style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.07)', animation: 'slide-in-right 0.28s cubic-bezier(0.16,1,0.3,1) both' }}
+              style={{ background: '#eaedf2', border: '1px solid rgba(15,23,42,0.07)', animation: 'slide-in-right 0.28s cubic-bezier(0.16,1,0.3,1) both' }}
             >
               <p className="mb-5 text-xs font-semibold text-slate-500 uppercase tracking-widest">
                 Pipeline · {ACTORS[active].role}
@@ -860,19 +860,19 @@ function VisualiseVisual() {
 // ─── Feature definitions (texte/structure inchangés) ───────────────────────
 const FEATURES = [
   {
-    tag: 'Import', color: '#00e5a0', bg: '#f4f6f9',
+    tag: 'Import', color: '#00e5a0', bg: '#eaedf2',
     title: "Vos données dans l'éditeur en 30 secondes.",
     body: "Uploadez un CSV, collez une URL d'API, ou tapez du SQL. DataPipe détecte le schéma et infère les types.",
     Visual: ImportVisual,
   },
   {
-    tag: 'Transform', color: '#ff6d35', bg: '#f4f6f9',
+    tag: 'Transform', color: '#ff6d35', bg: '#eaedf2',
     title: 'Configurez, prévisualisez, ajustez.',
     body: 'Filter, Join, Aggregate, Rename, Clean — chaque nœud est une boîte de dialogue. Configurez en cliquant.',
     Visual: TransformVisual,
   },
   {
-    tag: 'Visualise', color: '#ff6d35', bg: '#f4f6f9',
+    tag: 'Visualise', color: '#ff6d35', bg: '#eaedf2',
     title: 'Voyez le résultat, ajustez, exportez.',
     body: "Après chaque run, consultez les données dans la console, générez un graphique en un clic, ou téléchargez.",
     Visual: VisualiseVisual,
@@ -996,7 +996,7 @@ function TestimonialsSection() {
             <Reveal key={i} delay={i * 80}>
               <TiltCard
                 className="flex h-full flex-col justify-between rounded-2xl p-6"
-                style={{ background: '#f4f6f9', border: '1px solid rgba(15,23,42,0.07)' }}
+                style={{ background: '#eaedf2', border: '1px solid rgba(15,23,42,0.07)' }}
               >
                 <p className="text-sm text-slate-600 leading-relaxed">&ldquo;{t.q}&rdquo;</p>
                 <div className="mt-6 flex items-center gap-3 pt-5" style={{ borderTop: '1px solid rgba(15,23,42,0.06)' }}>
@@ -1184,7 +1184,7 @@ export default function LandingPage() {
 
   return (
     <div className="${poppins.variable} relative min-h-screen overflow-x-hidden text-slate-800" style={{
-      background: '#f4f6f9',
+      background: '#eaedf2',
       backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.09) 1px, transparent 1px)',
       backgroundSize: '14px 14px',
       fontFamily:  "'Poppins', sans-serif",
@@ -1300,7 +1300,7 @@ export default function LandingPage() {
           borderColor: 'rgba(15,23,42,0.08)',
           boxShadow: '0 0 0 1px rgba(15,23,42,0.04), 0 40px 120px rgba(0,0,0,0.8)',
         }}>
-          <div className="flex items-center gap-2 border-b px-5 py-3" style={{ background: '#f4f6f9', borderColor: 'rgba(15,23,42,0.07)' }}>
+          <div className="flex items-center gap-2 border-b px-5 py-3" style={{ background: '#eaedf2', borderColor: 'rgba(15,23,42,0.07)' }}>
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: '#ff5f57' }} />
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: '#febc2e' }} />
             <div className="h-2.5 w-2.5 rounded-full" style={{ background: '#28c840' }} />
@@ -1315,7 +1315,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex" style={{ height: 282 }}>
-            <div className="w-44 shrink-0 border-r p-3 space-y-1" style={{ borderColor: 'rgba(15,23,42,0.06)', background: '#f4f6f9' }}>
+            <div className="w-44 shrink-0 border-r p-3 space-y-1" style={{ borderColor: 'rgba(15,23,42,0.06)', background: '#eaedf2' }}>
               <p className="px-1 pb-2 text-[9px] font-bold uppercase tracking-widest text-gray-700">Nœuds</p>
               {[
                 { label: 'CSV Import', c: '#00e5a0' }, { label: 'JSON Loader', c: '#00e5a0' },
@@ -1338,7 +1338,7 @@ export default function LandingPage() {
       </Reveal>
 
       {/* STATS */}
-      <section className="relative z-10 border-t border-b" style={{ borderColor: 'rgba(15,23,42,0.07)', background: '#f4f6f9' }}>
+      <section className="relative z-10 border-t border-b" style={{ borderColor: 'rgba(15,23,42,0.07)', background: '#eaedf2' }}>
         <div className="mx-auto grid max-w-5xl grid-cols-2 md:grid-cols-4">
           {[
             { value: 12,  suffix: '',  label: 'Types de nœuds' },

@@ -133,7 +133,7 @@ export function NodeInspector({ pipelineId }: NodeInspectorProps) {
   }
 
   return (
-    <aside className="flex h-full w-[300px] flex-col border-l border-[#e6e8ec] bg-[#f4f6f9]">
+    <aside className="flex h-full w-[300px] flex-col border-l border-[#e6e8ec] bg-[#eaedf2]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#e6e8ec] px-4 py-3">
         <div className="flex items-center gap-2">

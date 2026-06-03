@@ -53,7 +53,7 @@ export const BaseNode = memo(({
         'relative min-w-[180px] max-w-[240px] rounded-xl border-2 bg-[#ffffff] transition-all duration-150 cursor-pointer select-none',
         border,
         glow,
-        selected && 'ring-2 ring-[#ff6d35] ring-offset-1 ring-offset-[#f4f6f9]'
+        selected && 'ring-2 ring-[#ff6d35] ring-offset-1 ring-offset-[#eaedf2]'
       )}
       onClick={() => setSelectedNode(id)}
     >
@@ -62,7 +62,7 @@ export const BaseNode = memo(({
         <Handle
           type="target"
           position={Position.Left}
-          className="!h-3 !w-3 !rounded-full !border-2 !border-[#d7dbe2] !bg-[#f4f6f9] hover:!border-[#ff6d35] transition-colors"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-[#d7dbe2] !bg-[#eaedf2] hover:!border-[#ff6d35] transition-colors"
           style={{ left: -6 }}
         />
       )}
@@ -99,7 +99,7 @@ export const BaseNode = memo(({
         <Handle
           type="source"
           position={Position.Right}
-          className="!h-3 !w-3 !rounded-full !border-2 !border-[#d7dbe2] !bg-[#f4f6f9] hover:!border-[#ff6d35] transition-colors"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-[#d7dbe2] !bg-[#eaedf2] hover:!border-[#ff6d35] transition-colors"
           style={{ right: -6 }}
         />
       )}

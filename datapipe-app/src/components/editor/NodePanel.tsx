@@ -72,7 +72,7 @@ export function NodePanel({ pipelineId }: NodePanelProps) {
   }
 
   return (
-    <aside className="flex h-full w-55 flex-col border-r border-[#e6e8ec] bg-[#f4f6f9]">
+    <aside className="flex h-full w-55 flex-col border-r border-[#e6e8ec] bg-[#eaedf2]">
       {/* Header */}
       <div className="border-b border-[#e6e8ec] p-3">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-700">Nœuds</p>

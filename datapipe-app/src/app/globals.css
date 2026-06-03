@@ -2,7 +2,7 @@
 
 /* ── Light theme tokens ──────────────────────────────────────────────────── */
 :root {
-  --background: #f4f6f9;   /* app canvas background */
+  --background: #eaedf2;   /* app canvas background */
   --surface: #ffffff;      /* cards / panels */
   --foreground: #1c2230;   /* primary text */
   --muted: #64748b;        /* secondary text */

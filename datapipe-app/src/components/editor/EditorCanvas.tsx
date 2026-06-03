@@ -139,7 +139,7 @@ export function EditorCanvas({ pipelineId }: EditorCanvasProps) {
   return (
     <div
       className="h-full w-full"
-      style={{ background: '#f4f6f9' }}
+      style={{ background: '#eaedf2' }}
       onDrop={onDrop}
       onDragOver={(e) => e.preventDefault()}
     >

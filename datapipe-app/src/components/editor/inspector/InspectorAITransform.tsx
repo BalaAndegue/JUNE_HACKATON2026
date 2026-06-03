@@ -114,7 +114,7 @@ export function InspectorAITransform({ config, onChange, onGenerateCode }: Props
               <Copy className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <pre className="rounded-lg bg-[#f4f6f9] border border-[#d7dbe2] p-3 text-[10px] text-emerald-400 font-mono overflow-auto max-h-48 whitespace-pre-wrap">
+          <pre className="rounded-lg bg-[#eaedf2] border border-[#d7dbe2] p-3 text-[10px] text-emerald-400 font-mono overflow-auto max-h-48 whitespace-pre-wrap">
             {config.generated_code}
           </pre>
         </div>

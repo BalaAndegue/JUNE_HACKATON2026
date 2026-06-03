@@ -49,7 +49,7 @@ export default function DemoPage() {
   }, [router, setUser])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f4f6f9]">
+    <div className="flex min-h-screen items-center justify-center bg-[#eaedf2]">
       <div className="flex flex-col items-center gap-4">
         <Image src="/logo.png" alt="DataPipe" width={64} height={64}
                className="rounded-2xl animate-pulse" />

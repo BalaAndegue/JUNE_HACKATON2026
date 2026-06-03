@@ -30,7 +30,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      'flex h-full flex-col border-r border-[#e6e8ec] bg-[#f4f6f9] transition-all duration-300',
+      'flex h-full flex-col border-r border-[#e6e8ec] bg-[#eaedf2] transition-all duration-300',
       sidebarCollapsed ? 'w-16' : 'w-[220px]'
     )}>
       {/* Logo / toggle */}

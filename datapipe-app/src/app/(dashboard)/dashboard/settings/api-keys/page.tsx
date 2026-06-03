@@ -114,7 +114,7 @@ export default function ApiKeysPage() {
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 space-y-2">
                 <p className="text-xs text-amber-400 font-semibold">Copiez cette clé maintenant — elle ne sera plus affichée</p>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 rounded bg-[#f4f6f9] px-3 py-2 text-xs text-emerald-400 font-mono break-all">{newKey}</code>
+                  <code className="flex-1 rounded bg-[#eaedf2] px-3 py-2 text-xs text-emerald-400 font-mono break-all">{newKey}</code>
                   <Button size="icon-sm" variant="outline" onClick={() => { navigator.clipboard.writeText(newKey); toast.success('Copié !') }}>
                     <Copy className="h-3.5 w-3.5" />
                   </Button>

@@ -38,7 +38,7 @@ export function Navbar({ title }: NavbarProps) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#e6e8ec] bg-[#f4f6f9] px-5">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#e6e8ec] bg-[#eaedf2] px-5">
       {/* Left */}
       <div className="flex items-center gap-3">
         {title && <h1 className="text-sm font-semibold text-slate-700">{title}</h1>}

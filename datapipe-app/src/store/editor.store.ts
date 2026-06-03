@@ -41,6 +41,7 @@ interface EditorState {
   setRunStatus: (status: RunStatus) => void
   setNodeStatus: (nodeId: string, status: NodeStatus) => void
   setNodeResults: (results: Record<string, NodeResult>) => void
+  applyLineage: (results: Record<string, NodeResult>) => void
   appendLog: (log: LogEntry) => void
   clearLogs: () => void
   resetRun: () => void
@@ -105,6 +106,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({ nodeStatuses: { ...state.nodeStatuses, [nodeId]: status } })),
 
   setNodeResults: (results) => set({ nodeResults: results }),
+
+  // Data lineage: annotate each edge with the number of rows flowing through it.
+  applyLineage: (results) =>
+    set((state) => ({
+      edges: state.edges.map((e) => {
+        const src = results[e.source as string]
+        const rows = src?.rows_output
+        if (rows == null) return e
+        return {
+          ...e,
+          animated: true,
+          label: `${rows.toLocaleString('fr-FR')} lignes`,
+          labelBgPadding: [6, 2] as [number, number],
+          labelBgBorderRadius: 6,
+          labelBgStyle: { fill: '#ffffff', stroke: '#e6e8ec' },
+          labelStyle: { fill: '#475569', fontSize: 10, fontWeight: 600 },
+          style: { stroke: rows > 0 ? '#ff6d35' : '#c2c9d4', strokeWidth: 2 },
+        }
+      }),
+    })),
 
   appendLog: (log) =>
     set((state) => ({ logs: [...state.logs.slice(-499), log] })),

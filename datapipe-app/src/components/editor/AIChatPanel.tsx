@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Send, Sparkles, Loader2, Copy, Zap } from 'lucide-react'
+import { X, Send, Sparkles, Loader2, Zap, ShieldCheck, AlertTriangle, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
 import { useEditorStore } from '@/store/editor.store'
-import { aiService } from '@/services/ai.service'
-import { pipelineService } from '@/services/pipeline.service'
+import { aiService, type AgentResult } from '@/services/ai.service'
+import { nodeService } from '@/services/node.service'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
@@ -18,16 +17,64 @@ interface AIChatPanelProps {
 }
 
 export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
-  const { setAIChatOpen, pipeline, setNodes, setEdges } = useEditorStore()
+  const { setAIChatOpen, setNodes, setEdges, nodes } = useEditorStore()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Bonjour ! Je suis votre assistant DataPipe. Je peux générer des pipelines, du SQL, ou répondre à vos questions sur vos données.',
+      content: 'Bonjour ! Je suis votre assistant DataPipe. Je peux générer des pipelines, du SQL contrôlé (testé sur un échantillon avant exécution), ou répondre à vos questions.',
     },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [agent, setAgent] = useState<AgentResult | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Find a source file in the current graph to dry-run the agent on real data.
+  const sourceFileId = (() => {
+    for (const n of nodes) {
+      const cfg = (n.data as { config?: Record<string, unknown> })?.config
+      if (cfg && typeof cfg.file_id === 'string') return cfg.file_id as string
+    }
+    return undefined
+  })()
+
+  const handleAgent = async () => {
+    if (!input.trim() || isLoading) return
+    const description = input.trim()
+    setInput('')
+    setAgent(null)
+    setMessages((prev) => [...prev, { role: 'user', content: `🤖 Agent : ${description}` }])
+    setIsLoading(true)
+    try {
+      const result = await aiService.agentTransform(description, sourceFileId)
+      setAgent(result)
+    } catch {
+      toast.error("L'agent n'a pas pu générer la transformation")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const applyAgent = async () => {
+    if (!agent) return
+    try {
+      const node = await nodeService.addNode(pipelineId, {
+        type: 'sql_transform',
+        position: { x: 700, y: 360 },
+        data: { config: { query: agent.generated_sql } },
+        label: 'Transformation IA',
+      })
+      setNodes([
+        ...nodes,
+        { id: node.id, type: 'sql_transform', position: node.position,
+          data: { ...node.data, type_slug: 'sql_transform' } } as unknown as import('@xyflow/react').Node,
+      ])
+      toast.success('Nœud SQL ajouté au pipeline')
+      setAgent(null)
+    } catch {
+      toast.error("Impossible d'ajouter le nœud")
+    }
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -102,7 +149,7 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
   }
 
   return (
-    <div className="absolute bottom-4 right-4 z-50 flex h-[520px] w-[380px] flex-col rounded-xl border border-[#d7dbe2] bg-[#f4f6f9] shadow-2xl">
+    <div className="absolute bottom-4 right-4 z-50 flex h-[520px] w-[380px] flex-col rounded-xl border border-[#d7dbe2] bg-[#eaedf2] shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between rounded-t-xl border-b border-[#e6e8ec] px-4 py-3">
         <div className="flex items-center gap-2">
@@ -152,6 +199,43 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
               </div>
             </div>
           ))}
+          {/* Controlled-agent card: SQL + explanation + dry-run preview + validation */}
+          {agent && (
+            <div className="rounded-xl border border-purple-500/30 bg-white p-3 text-xs shadow-sm">
+              <div className="mb-2 flex items-center gap-1.5 font-semibold text-purple-600">
+                <Sparkles className="h-3.5 w-3.5" /> Proposition de l&apos;agent
+              </div>
+              <p className="mb-2 text-slate-600">{agent.explanation}</p>
+              <pre className="mb-2 overflow-auto rounded-lg bg-slate-900 p-2 text-[10px] leading-relaxed text-emerald-300">
+                {agent.generated_sql}
+              </pre>
+
+              {agent.validation.safe ? (
+                <div className="mb-2 flex items-center gap-1 text-emerald-600">
+                  <ShieldCheck className="h-3.5 w-3.5" /> Requête sûre (lecture seule)
+                </div>
+              ) : (
+                <div className="mb-2 flex items-center gap-1 text-red-500">
+                  <AlertTriangle className="h-3.5 w-3.5" /> {agent.validation.issues.join(' · ')}
+                </div>
+              )}
+
+              {agent.sample && agent.sample.rows_in > 0 && (
+                <div className="mb-2 rounded-lg bg-slate-50 p-2 text-[10px] text-slate-600">
+                  <p className="font-medium text-slate-700">Test sur échantillon réel :</p>
+                  <p>{agent.sample.rows_in} → {agent.sample.rows_out} lignes
+                    {agent.sample.quality_after &&
+                      ` · qualité ${agent.sample.quality_after.score}%`}</p>
+                </div>
+              )}
+
+              <Button size="sm" className="w-full gap-1.5" disabled={!agent.validation.safe}
+                      onClick={applyAgent}>
+                <Check className="h-3.5 w-3.5" /> Appliquer comme nœud SQL
+              </Button>
+            </div>
+          )}
+
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-[#ffffff] rounded-xl px-3 py-2">
@@ -172,17 +256,26 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-purple-400 hover:text-purple-300 gap-1.5"
-            onClick={handleGeneratePipeline}
-            disabled={!input.trim() || isLoading}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Générer pipeline
-          </Button>
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost" size="sm"
+              className="text-xs text-purple-500 hover:text-purple-600 gap-1.5"
+              onClick={handleGeneratePipeline}
+              disabled={!input.trim() || isLoading}
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Pipeline
+            </Button>
+            <Button
+              variant="ghost" size="sm"
+              className="text-xs text-purple-500 hover:text-purple-600 gap-1.5"
+              onClick={handleAgent}
+              disabled={!input.trim() || isLoading}
+              title="Génère du SQL, le teste sur un échantillon réel, puis tu valides"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> Agent SQL
+            </Button>
+          </div>
           <Button size="sm" onClick={handleSend} disabled={!input.trim() || isLoading}>
             <Send className="h-3.5 w-3.5" />
           </Button>

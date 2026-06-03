@@ -199,7 +199,7 @@ export default function RegisterPage() {
       className={poppins.className}
       style={{
         position: 'relative', minHeight: '100vh',
-        background: '#f4f6f9',
+        background: '#eaedf2',
         backgroundImage: 'radial-gradient(circle, rgba(15,23,42,0.07) 1px, transparent 1px)',
         backgroundSize: '14px 14px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
