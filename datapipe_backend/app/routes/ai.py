@@ -14,6 +14,7 @@ AI_MODELS = [
     {'id': 'datapipe-analyst', 'name': 'DataPipe Analyst', 'provider': 'internal', 'description': 'Optimized for ETL and data analysis tasks', 'max_tokens': 8192, 'available': True},
     {'id': 'claude-3-5-haiku-20241022', 'name': 'Claude 3.5 Haiku', 'provider': 'anthropic', 'description': 'Most capable and fast Anthropic model', 'max_tokens': 2048, 'available': True},
     {'id': 'gemini-2.0-flash', 'name': 'Gemini 2.0 Flash', 'provider': 'google', 'description': 'Fast Google model, generous free tier', 'max_tokens': 8192, 'available': True},
+    {'id': 'llama-3.3-70b-versatile', 'name': 'Llama 3.3 70B (Groq)', 'provider': 'groq', 'description': 'Ultra-fast inference via Groq, OpenAI-compatible', 'max_tokens': 8192, 'available': True},
     {'id': 'gpt-4o-mini', 'name': 'GPT-4o Mini', 'provider': 'openai', 'description': 'Fast and cost-effective', 'max_tokens': 16384, 'available': True},
     {'id': 'gpt-4o', 'name': 'GPT-4o', 'provider': 'openai', 'description': 'Most capable OpenAI model', 'max_tokens': 128000, 'available': True},
 ]
@@ -41,7 +42,8 @@ def _call_openai(messages, model='gpt-4o-mini', max_tokens=1000):
         req = urllib.request.Request(
             'https://api.openai.com/v1/chat/completions',
             data=payload,
-            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json',
+                     'User-Agent': 'DataPipe/1.0'},
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = _json.loads(resp.read())
@@ -78,7 +80,8 @@ def _call_claude(system, messages, model=None, max_tokens=2048):
             headers={
                 'x-api-key': api_key,
                 'anthropic-version': '2023-06-01',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'User-Agent': 'DataPipe/1.0',
             },
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -119,7 +122,8 @@ def _call_gemini(system, messages, model=None, max_tokens=2048):
         url = (f'https://generativelanguage.googleapis.com/v1beta/models/'
                f'{model}:generateContent?key={api_key}')
         req = urllib.request.Request(
-            url, data=payload, headers={'Content-Type': 'application/json'})
+            url, data=payload,
+            headers={'Content-Type': 'application/json', 'User-Agent': 'DataPipe/1.0'})
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = _json.loads(resp.read())
             usage = result.get('usageMetadata', {})
@@ -131,11 +135,44 @@ def _call_gemini(system, messages, model=None, max_tokens=2048):
         return None
 
 
+def _call_groq(system, messages, max_tokens=2048):
+    """Groq — OpenAI-compatible chat completions, very fast inference."""
+    api_key = current_app.config.get('GROQ_API_KEY', '')
+    if not api_key:
+        return None
+    model = current_app.config.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
+    try:
+        import urllib.request
+        import json as _json
+        payload = _json.dumps({
+            'model': model,
+            'messages': [{'role': 'system', 'content': system}] + list(messages),
+            'max_tokens': max_tokens,
+            'temperature': 0.3,
+        }).encode()
+        req = urllib.request.Request(
+            'https://api.groq.com/openai/v1/chat/completions',
+            data=payload,
+            headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json',
+                     'User-Agent': 'DataPipe/1.0'},
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = _json.loads(resp.read())
+            AI_USAGE['tokens_used'] += result.get('usage', {}).get('total_tokens', 0)
+            AI_USAGE['requests'] += 1
+            return result['choices'][0]['message']['content']
+    except Exception as e:
+        current_app.logger.error(f"Groq API Error: {e}")
+        return None
+
+
 def _call_llm(system, messages, max_tokens=2048):
-    """Unified LLM call with provider fallback: Claude -> Gemini -> OpenAI."""
+    """Unified LLM call with provider fallback: Claude -> Gemini -> Groq -> OpenAI."""
     resp = _call_claude(system=system, messages=messages, max_tokens=max_tokens)
     if not resp:
         resp = _call_gemini(system=system, messages=messages, max_tokens=max_tokens)
+    if not resp:
+        resp = _call_groq(system=system, messages=messages, max_tokens=max_tokens)
     if not resp:
         resp = _call_openai(
             [{'role': 'system', 'content': system}] + list(messages), max_tokens=max_tokens)
@@ -148,6 +185,8 @@ def _llm_model_name():
         return 'claude-3-5-haiku-20241022'
     if cfg.get('GEMINI_API_KEY'):
         return cfg.get('GEMINI_MODEL', 'gemini-2.0-flash')
+    if cfg.get('GROQ_API_KEY'):
+        return cfg.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
     if cfg.get('OPENAI_API_KEY'):
         return 'gpt-4o-mini'
     return 'datapipe-analyst'

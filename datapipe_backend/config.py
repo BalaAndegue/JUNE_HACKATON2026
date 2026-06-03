@@ -1,6 +1,12 @@
 import os
 from datetime import timedelta
 
+from dotenv import load_dotenv
+
+# Load datapipe_backend/.env regardless of the current working directory.
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+
+
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'datapipe-hackathon-secret-2026')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///datapipe.db')
@@ -15,3 +21,5 @@ class Config:
     CLAUDE_MODEL = os.getenv('CLAUDE_MODEL', 'claude-3-5-haiku-20241022')
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
     GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+    GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+    GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.3-70b-versatile')
