@@ -47,13 +47,19 @@ def _post(url, payload):
 
 
 COMMANDS = [
+    {"command": "login", "description": "Se connecter : /login <email> <mdp>"},
+    {"command": "logout", "description": "Se déconnecter"},
+    {"command": "whoami", "description": "Compte + pipeline courant"},
     {"command": "pipeline", "description": "Résumé du pipeline + lien éditeur"},
-    {"command": "run", "description": "Exécuter le pipeline"},
     {"command": "new", "description": "Créer un pipeline : /new <nom>"},
+    {"command": "run", "description": "Exécuter le pipeline"},
     {"command": "preview", "description": "Aperçu des données (CSV)"},
     {"command": "audit", "description": "Rapport d'audit conformité (JSON)"},
     {"command": "anomalies", "description": "Transactions suspectes"},
     {"command": "chart", "description": "Graphique du résultat (image)"},
+    {"command": "alert", "description": "Alerte si anomalies > n : /alert <n>"},
+    {"command": "schedule", "description": "Exécution récurrente : /schedule <min>"},
+    {"command": "unschedule", "description": "Annuler la planification"},
     {"command": "help", "description": "Aide"},
 ]
 

@@ -57,4 +57,8 @@ def create_app(testing=False):
             from .seed_demo import seed_demo
             seed_demo(app.config['UPLOAD_FOLDER'])
 
+    if not testing and os.getenv('ENABLE_SCHEDULER', '1') != '0':
+        from .scheduler import start_scheduler
+        start_scheduler(app)
+
     return app

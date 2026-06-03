@@ -791,6 +791,20 @@ class MarketplaceNode(db.Model):
         }
 
 
+# ─────────────────────────────── TELEGRAM BOT ────────────────────────────
+
+class BotChat(db.Model):
+    """Lie un chat Telegram à un compte DataPipe + état (pipeline courant, alerte, planning)."""
+    __tablename__ = 'bot_chats'
+    chat_id = db.Column(db.String(40), primary_key=True)
+    user_id = db.Column(db.String(20), db.ForeignKey('users.id'))  # None tant que pas de /login
+    current_pipeline_id = db.Column(db.String(20))
+    anomaly_threshold = db.Column(db.Integer)        # alerte si anomalies > seuil (None = off)
+    schedule_minutes = db.Column(db.Integer)         # exécution récurrente (None = off)
+    next_run_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 # ─────────────────────────────── SEED DATA ───────────────────────────
 
 NODE_TYPES_DATA = [

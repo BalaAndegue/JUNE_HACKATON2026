@@ -19,7 +19,6 @@ from ..models import User, Pipeline, OrgMember, Workspace
 telegram_bp = Blueprint('telegram', __name__)
 
 _PENDING = {}     # chat_id -> plan (action ou plan multi-étapes)
-_CHAT_PIPE = {}   # chat_id -> pipeline_id courant
 
 
 def _tg(method, payload):
@@ -116,20 +115,59 @@ def _send(chat_id, text, confirm=False):
     return _tg('sendMessage', payload)
 
 
-def _demo_context(chat_id):
-    """(user_id, pipeline_id) sur lequel le bot opère — compte démo + pipeline courant."""
-    user = User.query.filter_by(email='demo@bank.cm').first()
-    if not user:
-        return None, None
-    pid = _CHAT_PIPE.get(chat_id)
-    if not pid:
-        member = OrgMember.query.filter_by(user_id=user.id).first()
-        ws = Workspace.query.filter_by(org_id=member.org_id).first() if member else None
-        pipe = (Pipeline.query.filter_by(workspace_id=ws.id).first() if ws else None)
-        pid = pipe.id if pipe else None
-        if pid:
-            _CHAT_PIPE[chat_id] = pid
-    return user.id, pid
+def _first_pipeline_id(user_id):
+    member = OrgMember.query.filter_by(user_id=user_id).first()
+    ws = Workspace.query.filter_by(org_id=member.org_id).first() if member else None
+    pipe = Pipeline.query.filter_by(workspace_id=ws.id).first() if ws else None
+    return pipe.id if pipe else None
+
+
+def _ensure_chat(chat_id):
+    """Récupère/crée le BotChat (par défaut lié au compte démo tant que pas de /login)."""
+    from ..extensions import db
+    from ..models import BotChat
+    chat = BotChat.query.get(str(chat_id))
+    if not chat:
+        demo = User.query.filter_by(email='demo@bank.cm').first()
+        chat = BotChat(chat_id=str(chat_id), user_id=(demo.id if demo else None))
+        db.session.add(chat)
+        db.session.commit()
+    return chat
+
+
+def _context(chat_id):
+    """(user_id, pipeline_id) — propre à l'utilisateur lié à ce chat."""
+    from ..extensions import db
+    chat = _ensure_chat(chat_id)
+    pid = chat.current_pipeline_id or _first_pipeline_id(chat.user_id)
+    if pid and pid != chat.current_pipeline_id:
+        chat.current_pipeline_id = pid
+        db.session.commit()
+    return chat.user_id, pid
+
+
+def _set_current_pipeline(chat_id, pid):
+    from ..extensions import db
+    chat = _ensure_chat(chat_id)
+    chat.current_pipeline_id = pid
+    db.session.commit()
+
+
+def _count_anomalies(run):
+    return sum((r.get('extra', {}) or {}).get('anomalies', 0)
+               for r in run.node_results.values() if isinstance(r.get('extra'), dict))
+
+
+def _maybe_alert(chat_id, run):
+    """Notifie si le nombre d'anomalies dépasse le seuil configuré (/alert)."""
+    from ..models import BotChat
+    chat = BotChat.query.get(str(chat_id))
+    if not chat or chat.anomaly_threshold is None or not run:
+        return
+    n = _count_anomalies(run)
+    if n > chat.anomaly_threshold:
+        _send(chat_id, f"🚨 ALERTE : {n} anomalie(s) détectée(s) "
+                       f"(seuil {chat.anomaly_threshold}). Tape /anomalies pour le détail.")
 
 
 def _pipeline_summary(pipeline):
@@ -149,20 +187,24 @@ def _pipeline_summary(pipeline):
 
 
 def _execute_plan(chat_id, user_id, pipeline_id, plan):
+    from ..models import Run
     steps = plan.get('steps') if plan.get('type') == 'plan' else [plan]
     lines = []
+    last_run_id = None
     for step in steps:
         res = run_action(user_id, step.get('action'), step.get('params'), pipeline_id)
-        # un create_pipeline redéfinit le pipeline courant du chat
-        if res.get('pipeline_id'):
+        if res.get('pipeline_id'):           # create_pipeline -> nouveau pipeline courant
             pipeline_id = res['pipeline_id']
-            _CHAT_PIPE[chat_id] = pipeline_id
+            _set_current_pipeline(chat_id, pipeline_id)
+        if res.get('run_id'):
+            last_run_id = res['run_id']
         lines.append(('✅ ' if res.get('ok') else '⚠️ ') + res.get('message', ''))
-    # Résumé du pipeline après les actions
     pipe = Pipeline.query.get(pipeline_id) if pipeline_id else None
     if pipe:
         lines.append('')
         lines.append(_pipeline_summary(pipe))
+    if last_run_id:                          # alerte anomalies éventuelle
+        _maybe_alert(chat_id, Run.query.get(last_run_id))
     return '\n'.join(lines)
 
 
@@ -181,7 +223,7 @@ def telegram_webhook():
         chat_id = cb['message']['chat']['id']
         if cb.get('data') == 'confirm' and chat_id in _PENDING:
             plan = _PENDING.pop(chat_id)
-            user_id, pid = _demo_context(chat_id)
+            user_id, pid = _context(chat_id)
             result = _execute_plan(chat_id, user_id, pid, plan)
             _send(chat_id, result or 'Action effectuée.')
         else:
@@ -205,7 +247,7 @@ def telegram_webhook():
         if not content:
             _send(chat_id, "Téléchargement du fichier impossible.")
             return jsonify({'ok': True})
-        user_id, pid = _demo_context(chat_id)
+        user_id, pid = _context(chat_id)
         f = ingest_file(user_id, fname, content)
         if not f:
             _send(chat_id, "Import impossible (workspace introuvable).")
@@ -225,28 +267,85 @@ def telegram_webhook():
         return jsonify({'ok': True})
 
     if text.startswith('/'):
-        user_id, pid = _demo_context(chat_id)
+        user_id, pid = _context(chat_id)
         pipe = Pipeline.query.get(pid) if pid else None
         cmd = text.split()[0].lower()
         arg = text[len(cmd):].strip()
 
         if cmd in ('/start', '/help'):
             _send(chat_id, "👋 Je pilote DataPipe.\n"
-                           "Commandes : /pipeline · /run · /new <nom> · /preview · /audit · "
-                           "/anomalies · /chart\n"
+                           "Compte : /login <email> <mdp> · /logout · /whoami\n"
+                           "Pipeline : /pipeline · /new <nom> · /run · /preview · /audit · /anomalies · /chart\n"
+                           "Auto : /alert <n> (alerte si anomalies > n) · /schedule <min> · /unschedule\n"
                            "Ou écris en clair : « masque les clients puis exécute ».\n"
                            "Tu peux aussi m'envoyer un fichier CSV/JSON.")
+        elif cmd == '/login':
+            from ..extensions import db
+            parts = arg.split()
+            if len(parts) < 2:
+                _send(chat_id, "Usage : /login <email> <mot de passe>")
+                return jsonify({'ok': True})
+            email, pwd = parts[0], ' '.join(parts[1:])
+            u = User.query.filter_by(email=email).first()
+            if not u or not u.check_password(pwd):
+                _send(chat_id, "❌ Identifiants invalides.")
+                return jsonify({'ok': True})
+            chat = _ensure_chat(chat_id)
+            chat.user_id = u.id
+            chat.current_pipeline_id = None
+            db.session.commit()
+            _send(chat_id, f"✅ Connecté en tant que {u.name} ({u.email}). Tes pipelines sont actifs.")
+        elif cmd == '/logout':
+            from ..extensions import db
+            demo = User.query.filter_by(email='demo@bank.cm').first()
+            chat = _ensure_chat(chat_id)
+            chat.user_id = demo.id if demo else chat.user_id
+            chat.current_pipeline_id = None
+            db.session.commit()
+            _send(chat_id, "Déconnecté (retour au compte démo).")
+        elif cmd == '/whoami':
+            u = User.query.get(user_id)
+            _send(chat_id, f"👤 {u.name} ({u.email})\n" + (
+                _pipeline_summary(pipe) if pipe else "Aucun pipeline courant."))
+        elif cmd == '/alert':
+            from ..extensions import db
+            chat = _ensure_chat(chat_id)
+            chat.anomaly_threshold = int(arg) if arg.isdigit() else None
+            db.session.commit()
+            _send(chat_id, (f"🔔 Alerte activée : je préviens si anomalies > {chat.anomaly_threshold}."
+                            if chat.anomaly_threshold is not None else "🔕 Alerte désactivée."))
+        elif cmd == '/schedule':
+            from ..extensions import db
+            from datetime import datetime, timedelta
+            if not arg.isdigit() or int(arg) < 1:
+                _send(chat_id, "Usage : /schedule <minutes> (ex. /schedule 60)")
+                return jsonify({'ok': True})
+            chat = _ensure_chat(chat_id)
+            chat.schedule_minutes = int(arg)
+            chat.next_run_at = datetime.utcnow() + timedelta(minutes=int(arg))
+            db.session.commit()
+            _send(chat_id, f"⏰ Exécution récurrente toutes les {arg} min programmée pour ce pipeline.")
+        elif cmd == '/unschedule':
+            from ..extensions import db
+            chat = _ensure_chat(chat_id)
+            chat.schedule_minutes = None
+            chat.next_run_at = None
+            db.session.commit()
+            _send(chat_id, "⏹️ Planification annulée.")
         elif cmd == '/pipeline':
             _send(chat_id, _pipeline_summary(pipe) if pipe else "Aucun pipeline courant.")
         elif cmd == '/new':
             res = run_action(user_id, 'create_pipeline', {'name': arg or 'Nouveau pipeline'})
             if res.get('pipeline_id'):
-                _CHAT_PIPE[chat_id] = res['pipeline_id']
+                _set_current_pipeline(chat_id, res['pipeline_id'])
             _send(chat_id, res.get('message', ''))
         elif cmd == '/run':
             res = run_action(user_id, 'run_pipeline', {}, pid)
             pipe = Pipeline.query.get(pid)
             _send(chat_id, res.get('message', '') + (('\n\n' + _pipeline_summary(pipe)) if pipe else ''))
+            if res.get('run_id'):
+                from ..models import Run
+                _maybe_alert(chat_id, Run.query.get(res['run_id']))
         elif cmd == '/preview':
             run = _latest_run(pipe) if pipe else None
             if not run or not run.node_results:
