@@ -492,6 +492,31 @@ def _plan_heuristic(message):
     return {'type': 'reply', 'message': _get_fallback_response(message)}
 
 
+def _split_intents(message):
+    """Découpe un message en sous-intentions sur les connecteurs (puis, ensuite, …)."""
+    parts = re.split(r'\s+puis\s+|\s+ensuite\s+|\s+then\s+|\s*;\s*|\s*,\s*',
+                     message or '', flags=re.I)
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _plan_steps(message):
+    """Construit un plan multi-étapes si le message contient plusieurs intentions."""
+    frags = _split_intents(message)
+    if len(frags) < 2:
+        return None
+    steps = []
+    for f in frags:
+        sub = _plan_heuristic(f)
+        if sub.get('type') == 'action':
+            steps.append(sub)
+    if len(steps) >= 2:
+        chain = " → ".join(s.get('action') for s in steps)
+        return {'type': 'plan',
+                'message': f"Plan en {len(steps)} étape(s) : {chain}. Tu valides l'ensemble ?",
+                'steps': steps}
+    return None
+
+
 @ai_bp.route('/agent/plan', methods=['POST'])
 @jwt_required()
 def agent_plan():
@@ -515,8 +540,10 @@ def agent_plan():
         "Tu es DataPipe Agent, un assistant qui PILOTE une plateforme ETL bancaire. "
         "À partir du message de l'utilisateur, tu réponds en JSON STRICT.\n"
         "Soit une réponse texte : {\"type\":\"reply\",\"message\":\"...\"}.\n"
-        "Soit UNE action à proposer : {\"type\":\"action\",\"action\":\"<nom>\","
-        "\"params\":{...},\"message\":\"explication en français\",\"warning\":\"... ou null\"}.\n"
+        "Soit UNE action : {\"type\":\"action\",\"action\":\"<nom>\","
+        "\"params\":{...},\"message\":\"explication\",\"warning\":\"... ou null\"}.\n"
+        "Soit un PLAN multi-étapes : {\"type\":\"plan\",\"message\":\"...\","
+        "\"steps\":[{\"action\":\"<nom>\",\"params\":{...},\"message\":\"...\"}, ...]}.\n"
         f"Actions possibles : {', '.join(ACTION_CATALOG.keys())}.\n"
         "Types de nœuds pour add_node : csv_reader, json_reader, sql_query, filter, map, "
         "aggregate, join, sort, dedup, sql_transform, validate, mask_pii, detect_anomalies, "
@@ -531,24 +558,39 @@ def agent_plan():
         try:
             cleaned = re.sub(r"```json\s*|```\s*", "", raw).strip()
             parsed = _json.loads(cleaned)
-            if parsed.get('type') in ('reply', 'action'):
+            if parsed.get('type') in ('reply', 'action', 'plan'):
                 plan = parsed
         except Exception:
             pass
     if plan is None:
-        plan = _plan_heuristic(message)
+        plan = _plan_steps(message) or _plan_heuristic(message)
+
+    def _validate_action(step):
+        """Returns a validated action step, or None if its action is unknown."""
+        action = step.get('action')
+        if action not in ACTION_CATALOG:
+            return None
+        step.setdefault('params', {})
+        if not step.get('warning'):
+            step['warning'] = ACTION_CATALOG[action]['warn']
+        return step
 
     # Validation + garde-fous serveur
     if plan.get('type') == 'action':
-        action = plan.get('action')
-        if action not in ACTION_CATALOG:
+        validated = _validate_action(plan)
+        if validated is None:
             plan = {'type': 'reply', 'message': plan.get('message')
                     or "Je n'ai pas compris l'action demandée."}
         else:
-            spec = ACTION_CATALOG[action]
-            plan.setdefault('params', {})
-            if not plan.get('warning'):
-                plan['warning'] = spec['warn']
+            plan = validated
+            plan['requires_confirmation'] = True
+    elif plan.get('type') == 'plan':
+        steps = [s for s in (_validate_action(s) for s in plan.get('steps', [])) if s]
+        if not steps:
+            plan = {'type': 'reply',
+                    'message': "Je n'ai pas su décomposer ta demande en actions connues."}
+        else:
+            plan['steps'] = steps
             plan['requires_confirmation'] = True
 
     plan['model'] = _llm_model_name() if raw else 'datapipe-analyst'

@@ -110,7 +110,7 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
     try {
       const plan = await aiService.agentPlan(text, { pipeline_id: pipelineId })
       setMessages((prev) => [...prev, { role: 'assistant', content: plan.message }])
-      if (plan.type === 'action') setPending(plan)
+      if (plan.type === 'action' || plan.type === 'plan') setPending(plan)
     } catch {
       toast.error("Erreur de communication avec l'IA")
     } finally {
@@ -126,8 +126,8 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
     URL.revokeObjectURL(url)
   }
 
-  // Execute a confirmed action via the existing services.
-  const executeAction = async (plan: PlanAction) => {
+  // Execute a confirmed action (or one plan step) via the existing services.
+  const executeAction = async (plan: { action?: string; params?: Record<string, unknown> }) => {
     const p = plan.params || {}
     switch (plan.action) {
       case 'add_node': {
@@ -206,9 +206,18 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
     setPending(null)
     setIsLoading(true)
     try {
-      await executeAction(plan)
-      if (plan.action !== 'generate_sql') {
-        setMessages((prev) => [...prev, { role: 'assistant', content: '✅ Action effectuée.' }])
+      if (plan.type === 'plan' && plan.steps) {
+        for (let i = 0; i < plan.steps.length; i++) {
+          const step = plan.steps[i]
+          await executeAction(step)
+          setMessages((prev) => [...prev,
+            { role: 'assistant', content: `✅ Étape ${i + 1}/${plan.steps!.length} : ${step.action}` }])
+        }
+      } else {
+        await executeAction(plan)
+        if (plan.action !== 'generate_sql') {
+          setMessages((prev) => [...prev, { role: 'assistant', content: '✅ Action effectuée.' }])
+        }
       }
     } catch {
       toast.error("L'action a échoué")
@@ -317,6 +326,32 @@ export function AIChatPanel({ pipelineId }: AIChatPanelProps) {
               </div>
             </div>
           ))}
+          {/* Multi-step plan card — user reviews all steps, then confirms */}
+          {pending && pending.type === 'plan' && pending.steps && (
+            <div className="rounded-xl border border-purple-500/30 bg-white p-3 text-xs shadow-sm">
+              <div className="mb-1.5 flex items-center gap-1.5 font-semibold text-purple-600">
+                <Sparkles className="h-3.5 w-3.5" /> Plan en {pending.steps.length} étapes
+              </div>
+              <ol className="mb-2 space-y-1">
+                {pending.steps.map((s, i) => (
+                  <li key={i} className="flex gap-2 text-slate-700">
+                    <span className="font-semibold text-purple-500">{i + 1}.</span>
+                    <span>{s.message || s.action}
+                      {s.warning && <span className="ml-1 text-amber-600">⚠️</span>}</span>
+                  </li>
+                ))}
+              </ol>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 gap-1.5" onClick={confirmPlan}>
+                  <Check className="h-3.5 w-3.5" /> Tout exécuter
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => setPending(null)}>
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Proposed action card — user confirms before anything happens */}
           {pending && pending.type === 'action' && (
             <div className="rounded-xl border border-purple-500/30 bg-white p-3 text-xs shadow-sm">

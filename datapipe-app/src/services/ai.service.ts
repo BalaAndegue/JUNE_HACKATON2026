@@ -24,12 +24,20 @@ export interface AgentResult {
   }
 }
 
+export interface PlanStep {
+  action: string
+  params?: Record<string, unknown>
+  message?: string
+  warning?: string | null
+}
+
 export interface PlanAction {
-  type: 'reply' | 'action'
+  type: 'reply' | 'action' | 'plan'
   message: string
   action?: string
   params?: Record<string, unknown>
   warning?: string | null
+  steps?: PlanStep[]
   requires_confirmation?: boolean
   model?: string
 }

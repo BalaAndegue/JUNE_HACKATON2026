@@ -659,3 +659,10 @@ class TestAgentPlan:
         d = self._plan(client, auth_headers, "connecte Source CSV à Masquage").get_json()
         assert d['action'] == 'connect_nodes'
         assert d['params']['source'] and d['params']['target']
+
+    def test_multistep_plan(self, client, auth_headers):
+        d = self._plan(client, auth_headers,
+                       "masque les clients, détecte les anomalies puis exécute le pipeline").get_json()
+        assert d['type'] == 'plan'
+        assert len(d['steps']) >= 2
+        assert all('action' in s for s in d['steps'])
