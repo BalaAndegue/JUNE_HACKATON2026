@@ -190,7 +190,7 @@ function PipelineCanvas() {
               x={node.x + 10} y={node.y + 27}
               fontSize={10}
               fontFamily="monospace"
-              fill={isDone || isActive ? color : 'rgba(255,255,255,0.2)'}
+              fill={isDone || isActive ? color : 'rgba(15,23,42,0.45)'}
               style={{ transition: 'fill 0.4s ease' }}
             >
               {node.label}
@@ -272,11 +272,11 @@ export default function LoginPage() {
           borderRadius: 20,
           overflow: 'hidden',
           // Liquid glass
-          background: 'linear-gradient(to bottom, rgba(15,23,42,0.07) 0%, rgba(12,12,18,0.82) 35%, rgba(8,8,12,0.95) 100%)',
+          background: 'linear-gradient(to bottom, rgba(15,23,42,0.07) 0%, rgba(255,255,255,0.92) 35%, rgba(247,249,252,0.97) 100%)',
           backdropFilter: 'blur(32px) saturate(160%)',
           WebkitBackdropFilter: 'blur(32px) saturate(160%)',
           border: '1px solid rgba(15,23,42,0.08)',
-          boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.07), 0 40px 100px rgba(0,0,0,0.6)',
+          boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.07), 0 24px 70px rgba(15,23,42,0.16)',
           // Entrée
           opacity:   mounted ? 1 : 0,
           transform: mounted ? 'translateY(0)' : 'translateY(20px)',
@@ -302,10 +302,10 @@ export default function LoginPage() {
 
           {/* Heading */}
           <div style={{ marginBottom: 28 }}>
-            <h1 style={{ fontSize: 26, fontWeight:200 , color: '#f5f5f5', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 6 }}>
+            <h1 style={{ fontSize: 26, fontWeight:200 , color: '#1c2230', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 6 }}>
               Content de vous revoir
             </h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.32)', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: 'rgba(15,23,42,0.55)', lineHeight: 1.5 }}>
               Pas encore de compte ?{' '}
               <Link href="/register" style={{ color: '#ff6d35', textDecoration: 'none' }}
                 onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
@@ -320,7 +320,7 @@ export default function LoginPage() {
 
             {/* Email */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2px' }}>
+              <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(15,23,42,0.6)', letterSpacing: '0.2px' }}>
                 Adresse email
               </label>
               <input
@@ -335,7 +335,7 @@ export default function LoginPage() {
                   height: 42,
                   padding: '0 14px',
                   background: 'rgba(15,23,42,0.05)',
-                  border: '1px solid rgba(255,255,255,0.09)',
+                  border: '1px solid rgba(15,23,42,0.12)',
                   borderRadius: 10,
                   color: '#1c2230',
                   fontSize: 13,
@@ -349,7 +349,7 @@ export default function LoginPage() {
                   e.currentTarget.style.boxShadow    = '0 0 0 3px rgba(255,109,53,0.12)'
                 }}
                 onBlur={e => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                  e.currentTarget.style.borderColor = 'rgba(15,23,42,0.12)'
                   e.currentTarget.style.background   = 'rgba(15,23,42,0.05)'
                   e.currentTarget.style.boxShadow    = 'none'
                 }}
@@ -359,12 +359,12 @@ export default function LoginPage() {
             {/* Password */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2px' }}>
+                <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(15,23,42,0.6)', letterSpacing: '0.2px' }}>
                   Mot de passe
                 </label>
-                <Link href="/forgot-password" style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', transition: 'color 0.15s' }}
+                <Link href="/forgot-password" style={{ fontSize: 11, color: 'rgba(15,23,42,0.5)', textDecoration: 'none', transition: 'color 0.15s' }}
                   onMouseOver={e => (e.currentTarget.style.color = '#ff6d35')}
-                  onMouseOut={e  => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}>
+                  onMouseOut={e  => (e.currentTarget.style.color = 'rgba(15,23,42,0.5)')}>
                   Oublié ?
                 </Link>
               </div>
@@ -381,7 +381,7 @@ export default function LoginPage() {
                     height: 42,
                     padding: '0 40px 0 14px',
                     background: 'rgba(15,23,42,0.05)',
-                    border: '1px solid rgba(255,255,255,0.09)',
+                    border: '1px solid rgba(15,23,42,0.12)',
                     borderRadius: 10,
                     color: '#1c2230',
                     fontSize: 13,
@@ -395,7 +395,7 @@ export default function LoginPage() {
                     e.currentTarget.style.boxShadow    = '0 0 0 3px rgba(255,109,53,0.12)'
                   }}
                   onBlur={e => {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+                    e.currentTarget.style.borderColor = 'rgba(15,23,42,0.12)'
                     e.currentTarget.style.background   = 'rgba(15,23,42,0.05)'
                     e.currentTarget.style.boxShadow    = 'none'
                   }}
@@ -407,11 +407,11 @@ export default function LoginPage() {
                   style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                    color: 'rgba(255,255,255,0.25)', transition: 'color 0.15s',
+                    color: 'rgba(15,23,42,0.5)', transition: 'color 0.15s',
                     display: 'flex', alignItems: 'center',
                   }}
-                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
-                  onMouseOut={e  => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(15,23,42,0.75)')}
+                  onMouseOut={e  => (e.currentTarget.style.color = 'rgba(15,23,42,0.5)')}
                 >
                   {showPwd ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
                 </button>
@@ -466,7 +466,7 @@ export default function LoginPage() {
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '22px 0' }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(15,23,42,0.07)' }} />
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>ou</span>
+            <span style={{ fontSize: 11, color: 'rgba(15,23,42,0.45)' }}>ou</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(15,23,42,0.07)' }} />
           </div>
 
@@ -479,20 +479,20 @@ export default function LoginPage() {
               background: 'rgba(15,23,42,0.04)',
               border: '1px solid rgba(15,23,42,0.08)',
               borderRadius: 10,
-              color: 'rgba(255,255,255,0.45)',
+              color: 'rgba(15,23,42,0.6)',
               fontSize: 13, fontFamily: 'inherit', fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s',
             }}
             onMouseOver={e => {
               e.currentTarget.style.background    = 'rgba(15,23,42,0.07)'
-              e.currentTarget.style.borderColor   = 'rgba(255,255,255,0.14)'
-              e.currentTarget.style.color         = 'rgba(255,255,255,0.7)'
+              e.currentTarget.style.borderColor   = 'rgba(15,23,42,0.18)'
+              e.currentTarget.style.color         = 'rgba(15,23,42,0.8)'
             }}
             onMouseOut={e => {
               e.currentTarget.style.background    = 'rgba(15,23,42,0.04)'
               e.currentTarget.style.borderColor   = 'rgba(15,23,42,0.08)'
-              e.currentTarget.style.color         = 'rgba(255,255,255,0.45)'
+              e.currentTarget.style.color         = 'rgba(15,23,42,0.6)'
             }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>

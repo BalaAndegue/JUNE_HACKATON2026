@@ -435,7 +435,7 @@ function BentoGrid() {
 // ─────────────────────────────────────────────────────────────────────────
 function AISection() {
   return (
-    <section className="border-t py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+    <section className="py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <div className="flex flex-col gap-12 md:flex-row md:items-start md:gap-16">
           {/* Left — big animated card */}
@@ -572,7 +572,7 @@ function ActorsSection() {
   const pick = useCallback((i: number) => { if (i === active) return; setActive(i); setKey(k => k + 1) }, [active])
 
   return (
-    <section className="border-t py-28" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+    <section className="py-28" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <Reveal className="mb-16">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff6d35] mb-3">Cas d&apos;usage</p>
@@ -882,7 +882,7 @@ const FEATURES = [
 function StickyFeatures() {
   return (
     /* Le wrapper doit être non-overflow pour que sticky fonctionne */
-    <section className="border-t relative" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+    <section className="relative" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       {FEATURES.map((f, i) => (
         <div
           key={i}
@@ -947,7 +947,7 @@ const NODE_LIST = [
 
 function NodesSection() {
   return (
-    <section className="border-t py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+    <section className="py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <Reveal className="mb-12">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff6d35] mb-3">12 nœuds</p>
@@ -986,7 +986,7 @@ const TESTIMONIALS = [
 
 function TestimonialsSection() {
   return (
-    <section className="border-t py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+    <section className="py-24" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
       <div className="mx-auto max-w-5xl px-6">
         <Reveal className="mb-12">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Retours</p>
@@ -1335,7 +1335,7 @@ export default function LandingPage() {
       </Reveal>
 
       {/* STATS */}
-      <section className="relative z-10 border-t border-b" style={{ borderColor: 'rgba(15,23,42,0.07)', background: '#eaedf2' }}>
+      <section className="relative z-10" style={{ borderColor: 'rgba(15,23,42,0.07)', background: '#eaedf2' }}>
         <div className="mx-auto grid max-w-5xl grid-cols-2 md:grid-cols-4">
           {[
             { value: 12,  suffix: '',  label: 'Types de nœuds' },
@@ -1362,7 +1362,7 @@ export default function LandingPage() {
       </div>
 
       {/* CTA */}
-      <section className="relative z-10 border-t py-28" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
+      <section className="relative z-10 py-28" style={{ borderColor: 'rgba(15,23,42,0.07)' }}>
         <Reveal className="mx-auto max-w-xl px-6 text-center">
           <h2 className="text-4xl font-light text-slate-900 md:text-4xl leading-tight">
             Commencez maintenant.<br />

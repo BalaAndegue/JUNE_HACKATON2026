@@ -115,7 +115,7 @@ function PipelineCanvas() {
               {isActive && <animate attributeName="opacity" values="1;0.2;1" dur="0.8s" repeatCount="indefinite" />}
             </circle>
             <text x={node.x + 8} y={node.y + 27} fontSize={9.5} fontFamily="monospace"
-              fill={isDone || isActive ? c : 'rgba(255,255,255,0.18)'}
+              fill={isDone || isActive ? c : 'rgba(15,23,42,0.4)'}
               style={{ transition: 'fill 0.4s' }}>
               {node.label}
             </text>
@@ -132,7 +132,7 @@ function PipelineCanvas() {
 const inputBase: React.CSSProperties = {
   width: '100%', height: 42, padding: '0 14px',
   background: 'rgba(15,23,42,0.05)',
-  border: '1px solid rgba(255,255,255,0.09)',
+  border: '1px solid rgba(15,23,42,0.12)',
   borderRadius: 10, color: '#1c2230',
   fontSize: 13, fontFamily: 'inherit', outline: 'none',
   transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
@@ -143,7 +143,7 @@ const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
   e.currentTarget.style.boxShadow    = '0 0 0 3px rgba(255,109,53,0.12)'
 }
 const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)'
+  e.currentTarget.style.borderColor = 'rgba(15,23,42,0.12)'
   e.currentTarget.style.background   = 'rgba(15,23,42,0.05)'
   e.currentTarget.style.boxShadow    = 'none'
 }
@@ -184,11 +184,11 @@ export default function RegisterPage() {
     width: '100%', maxWidth: 440,
     margin: '0 24px',
     borderRadius: 20, overflow: 'hidden',
-    background: 'linear-gradient(to bottom, rgba(15,23,42,0.07) 0%, rgba(12,12,18,0.82) 35%, rgba(8,8,12,0.95) 100%)',
+    background: 'linear-gradient(to bottom, rgba(15,23,42,0.07) 0%, rgba(255,255,255,0.92) 35%, rgba(247,249,252,0.97) 100%)',
     backdropFilter: 'blur(32px) saturate(160%)',
     WebkitBackdropFilter: 'blur(32px) saturate(160%)',
     border: '1px solid rgba(15,23,42,0.08)',
-    boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.07), 0 40px 100px rgba(0,0,0,0.6)',
+    boxShadow: 'inset 0 1px 0 rgba(15,23,42,0.07), 0 24px 70px rgba(15,23,42,0.16)',
     opacity:   mounted ? 1 : 0,
     transform: mounted ? 'translateY(0)' : 'translateY(20px)',
     transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)',
@@ -240,10 +240,10 @@ export default function RegisterPage() {
                 <Check style={{ width: 28, height: 28, color: '#10b981' }} />
               </div>
               <div>
-                <h2 style={{ fontSize: 24, fontWeight: 800, color: '#f5f5f5', letterSpacing: '-0.4px', marginBottom: 8 }}>
+                <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1c2230', letterSpacing: '-0.4px', marginBottom: 8 }}>
                   Compte créé !
                 </h2>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13, color: 'rgba(15,23,42,0.55)', lineHeight: 1.6 }}>
                   Vérifiez votre boîte mail pour confirmer<br />votre adresse, puis connectez-vous.
                 </p>
               </div>
@@ -275,10 +275,10 @@ export default function RegisterPage() {
 
               {/* Heading */}
               <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 200, color: '#f5f5f5', letterSpacing: '-0.5px', marginBottom: 6 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 200, color: '#1c2230', letterSpacing: '-0.5px', marginBottom: 6 }}>
                   Créer un compte
                 </h1>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.32)' }}>
+                <p style={{ fontSize: 13, color: 'rgba(15,23,42,0.55)' }}>
                   Déjà inscrit ?{' '}
                   <Link href="/login" style={{ color: '#ff6d35', textDecoration: 'none' }}
                     onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
@@ -293,7 +293,7 @@ export default function RegisterPage() {
 
                 {/* Nom */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2px' }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(15,23,42,0.6)', letterSpacing: '0.2px' }}>
                     Nom complet
                   </label>
                   <input
@@ -305,7 +305,7 @@ export default function RegisterPage() {
 
                 {/* Email */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2px' }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(15,23,42,0.6)', letterSpacing: '0.2px' }}>
                     Adresse email
                   </label>
                   <input
@@ -317,7 +317,7 @@ export default function RegisterPage() {
 
                 {/* Password */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2px' }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(15,23,42,0.6)', letterSpacing: '0.2px' }}>
                     Mot de passe
                   </label>
                   <input
@@ -348,9 +348,9 @@ export default function RegisterPage() {
 
                 {/* Organisation */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.2px', display: 'flex', gap: 6 }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: 'rgba(15,23,42,0.6)', letterSpacing: '0.2px', display: 'flex', gap: 6 }}>
                     Organisation
-                    <span style={{ color: 'rgba(255,255,255,0.18)', fontWeight: 400 }}>optionnel</span>
+                    <span style={{ color: 'rgba(15,23,42,0.4)', fontWeight: 400 }}>optionnel</span>
                   </label>
                   <input
                     placeholder="Acme Corp" value={form.org_name}
@@ -391,11 +391,11 @@ export default function RegisterPage() {
                   )}
                 </button>
 
-                <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.18)', lineHeight: 1.6 }}>
+                <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(15,23,42,0.4)', lineHeight: 1.6 }}>
                   En créant un compte vous acceptez nos{' '}
-                  <span style={{ color: 'rgba(255,255,255,0.32)', cursor: 'pointer' }}>Conditions d'utilisation</span>
+                  <span style={{ color: 'rgba(15,23,42,0.55)', cursor: 'pointer' }}>Conditions d'utilisation</span>
                   {' '}et notre{' '}
-                  <span style={{ color: 'rgba(255,255,255,0.32)', cursor: 'pointer' }}>Politique de confidentialité</span>.
+                  <span style={{ color: 'rgba(15,23,42,0.55)', cursor: 'pointer' }}>Politique de confidentialité</span>.
                 </p>
               </form>
             </>
