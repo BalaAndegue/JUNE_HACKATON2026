@@ -28,3 +28,7 @@ class Config:
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
     # URL publique HTTPS du backend (prod) -> le webhook Telegram s'enregistre tout seul
     PUBLIC_URL = os.getenv('PUBLIC_URL', '')
+    # Origines CORS autorisées (liste séparée par des virgules)
+    CORS_ORIGINS = os.getenv(
+        'CORS_ORIGINS',
+        'http://localhost:3000,https://datapipe.duckdns.org')
