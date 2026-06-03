@@ -45,8 +45,8 @@ DataPipe est une API backend Flask permettant de concevoir, exécuter et supervi
 ## Installation locale
 
 ```bash
-git clone https://github.com/BalaAndegue/JUNE_HACKATON2026.git
-cd JUNE_HACKATON2026
+git clone https://github.com/Delmat237/DataPipe---ETL-Visuel-pour-Pipelines-Bancaires.git
+cd DataPipe---ETL-Visuel-pour-Pipelines-Bancaires
 
 python -m venv .venv
 source .venv/bin/activate
@@ -213,6 +213,7 @@ curl -X POST http://localhost:5000/api/v1/auth/login \
 ## Documentation complémentaire
 
 - [Modélisation mathématique](docs/MODELISATION_MATHEMATIQUE.md)
+- [État de l'art](docs/ETAT_DE_L_ART.md)
 
 ## Collaborateurs
 
