@@ -5,11 +5,51 @@ The web chat confirms then calls REST endpoints; the Telegram bot has no browser
 so it executes here directly against the DB, then publishes a real-time event so
 any open web editor redraws live. One vocabulary of actions, two front-ends.
 """
+import io
+import os
+
 from datetime import datetime
 
 from .extensions import db
-from .models import (User, OrgMember, Workspace, Pipeline, Node, Edge)
+from .models import (User, OrgMember, Workspace, Pipeline, Node, Edge, File)
 from . import realtime
+
+
+def ingest_file(user_id, filename, content):
+    """Enregistre un fichier (bytes) dans le workspace de l'utilisateur + parse le schéma.
+    Renvoie l'objet File (ou None si pas de workspace)."""
+    from flask import current_app
+    import pandas as pd
+    ws_id = _user_workspace_id(user_id)
+    if not ws_id:
+        return None
+    upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], ws_id)
+    os.makedirs(upload_dir, exist_ok=True)
+    path = os.path.join(upload_dir, filename)
+    with open(path, 'wb') as fp:
+        fp.write(content)
+
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'csv'
+    cols, rows, preview = [], 0, []
+    try:
+        if ext == 'json':
+            df = pd.read_json(io.BytesIO(content))
+        else:
+            df = pd.read_csv(io.BytesIO(content), on_bad_lines='skip')
+        cols = [str(c) for c in df.columns]
+        rows = len(df)
+        preview = df.head(5).to_dict(orient='records')
+    except Exception:
+        pass
+
+    f = File(workspace_id=ws_id, name=filename, original_name=filename,
+             size=len(content), mime_type='text/csv' if ext != 'json' else 'application/json',
+             path=path, rows_count=rows, columns_count=len(cols))
+    f.columns = cols
+    f.preview = preview
+    db.session.add(f)
+    db.session.commit()
+    return f
 
 
 def _user_workspace_id(user_id):

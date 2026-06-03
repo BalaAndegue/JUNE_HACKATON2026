@@ -13,7 +13,7 @@ import urllib.request
 from flask import Blueprint, request, jsonify, current_app
 
 from .ai import plan_from_message
-from ..agent_exec import run_action
+from ..agent_exec import run_action, ingest_file
 from ..models import User, Pipeline, OrgMember, Workspace
 
 telegram_bp = Blueprint('telegram', __name__)
@@ -37,6 +37,24 @@ def _tg(method, payload):
     except Exception as e:  # noqa: BLE001
         current_app.logger.error(f"Telegram API error: {e}")
         return None
+
+
+def _download_telegram_file(file_id):
+    """Télécharge le contenu d'un fichier Telegram (getFile -> file API)."""
+    token = current_app.config.get('TELEGRAM_BOT_TOKEN', '')
+    if not token:
+        return None, None
+    info = _tg('getFile', {'file_id': file_id})
+    if not info or not info.get('ok'):
+        return None, None
+    file_path = info['result']['file_path']
+    try:
+        url = f'https://api.telegram.org/file/bot{token}/{file_path}'
+        with urllib.request.urlopen(url, timeout=30) as r:
+            return r.read(), file_path
+    except Exception as e:  # noqa: BLE001
+        current_app.logger.error(f"Telegram download error: {e}")
+        return None, None
 
 
 def _send(chat_id, text, confirm=False):
@@ -123,10 +141,37 @@ def telegram_webhook():
         _tg('answerCallbackQuery', {'callback_query_id': cb['id']})
         return jsonify({'ok': True})
 
-    # 2) Message texte
     msg = update.get('message') or {}
-    text = (msg.get('text') or '').strip()
     chat_id = (msg.get('chat') or {}).get('id')
+
+    # 2) Document (CSV/JSON envoyé dans Telegram) -> import + source du pipeline
+    doc = msg.get('document')
+    if doc and chat_id is not None:
+        fname = doc.get('file_name') or 'upload.csv'
+        ext = fname.rsplit('.', 1)[-1].lower() if '.' in fname else ''
+        if ext not in ('csv', 'json', 'txt'):
+            _send(chat_id, "Format non supporté. Envoie un fichier .csv ou .json.")
+            return jsonify({'ok': True})
+        content, _ = _download_telegram_file(doc.get('file_id'))
+        if not content:
+            _send(chat_id, "Téléchargement du fichier impossible.")
+            return jsonify({'ok': True})
+        user_id, pid = _demo_context(chat_id)
+        f = ingest_file(user_id, fname, content)
+        if not f:
+            _send(chat_id, "Import impossible (workspace introuvable).")
+            return jsonify({'ok': True})
+        node_type = 'json_reader' if ext == 'json' else 'csv_reader'
+        run_action(user_id, 'add_node',
+                   {'node_type': node_type, 'label': fname, 'config': {'file_id': f.id}}, pid)
+        pipe = Pipeline.query.get(pid)
+        summary = ('\n\n' + _pipeline_summary(pipe)) if pipe else ''
+        _send(chat_id, f"📥 « {fname} » importé — {f.rows_count} lignes, "
+                       f"{f.columns_count} colonnes. Ajouté comme source.{summary}")
+        return jsonify({'ok': True})
+
+    # 3) Message texte
+    text = (msg.get('text') or '').strip()
     if not text or chat_id is None:
         return jsonify({'ok': True})
 

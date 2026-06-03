@@ -38,3 +38,16 @@ def test_run_action_crud_and_run():
 
         r = agent_exec.run_action(uid, 'delete_node', {'node': 'Masquage'}, newpid)
         assert r['ok']
+
+
+def test_ingest_file_creates_file():
+    app = create_app(testing=True)
+    uid, _ = _setup(app)
+    with app.app_context():
+        csv = b"montant,type\n100,credit\n-50,debit\n9000,credit\n"
+        f = agent_exec.ingest_file(uid, 'tx.csv', csv)
+        assert f is not None
+        assert f.rows_count == 3
+        assert set(f.columns) == {'montant', 'type'}
+        import os
+        assert os.path.exists(f.path)
