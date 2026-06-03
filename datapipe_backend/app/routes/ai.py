@@ -398,6 +398,142 @@ def agent_transform():
     return jsonify(response)
 
 
+# ─── Chat « mode action » : l'assistant propose une action, l'utilisateur confirme ──
+
+# Catalogue des actions que l'agent peut proposer. Chaque exécution se fait via les
+# endpoints existants côté front APRÈS confirmation de l'utilisateur.
+ACTION_CATALOG = {
+    'create_pipeline':  {'params': ['name'],            'warn': None},
+    'add_node':         {'params': ['node_type', 'label'], 'warn': None},
+    'connect_nodes':    {'params': ['source', 'target'], 'warn': None},
+    'configure_node':   {'params': ['node', 'config'],   'warn': None},
+    'attach_file':      {'params': ['file_id'],          'warn': None},
+    'generate_sql':     {'params': ['description'],      'warn': None},
+    'run_pipeline':     {'params': [],                   'warn': "L'exécution traitera les données réelles du pipeline."},
+    'delete_node':      {'params': ['node'],             'warn': "Cette action supprime un nœud et ses connexions."},
+    'export_pipeline':  {'params': ['format'],           'warn': None},
+    'audit_report':     {'params': [],                   'warn': None},
+}
+
+_NODE_KEYWORDS = {
+    'mask_pii': ['masqu', 'anonymis', 'rgpd', 'pii', 'confidentia'],
+    'detect_anomalies': ['anomal', 'suspect', 'fraud', 'atypiqu'],
+    'quality_report': ['qualité', 'quality'],
+    'filter': ['filtre', 'filtrer', 'garde', 'supérieur', 'inférieur', 'where'],
+    'aggregate': ['agrég', 'somme', 'total', 'groupe', 'moyenne', 'count'],
+    'dedup': ['doublon', 'dédoublon', 'duplicat'],
+    'join': ['jointure', 'join', 'fusionne'],
+    'csv_reader': ['csv', 'importe un fichier', 'charge un csv'],
+    'file_export': ['exporte en csv', 'export csv'],
+}
+
+
+def _plan_heuristic(message):
+    """Fallback sans LLM : déduit une action proposée à partir de mots-clés."""
+    m = (message or '').lower()
+
+    if any(k in m for k in ['crée', 'créer', 'nouveau pipeline', 'new pipeline']):
+        name = 'Nouveau pipeline'
+        mt = re.search(r'(?:appel|nomm)[^\s]*\s+["\']?([\w \-]{3,40})', m)
+        if mt:
+            name = mt.group(1).strip()
+        return {'type': 'action', 'action': 'create_pipeline', 'params': {'name': name},
+                'message': f"Je vais créer un pipeline « {name} »."}
+
+    if any(k in m for k in ['exécute', 'execute', 'lance', 'run ', 'lancer']):
+        return {'type': 'action', 'action': 'run_pipeline', 'params': {},
+                'message': "Je vais exécuter le pipeline courant sur les données réelles."}
+
+    if any(k in m for k in ['audit', 'conformité', 'rapport']):
+        return {'type': 'action', 'action': 'audit_report', 'params': {},
+                'message': "Je peux générer le rapport d'audit de conformité du dernier run."}
+
+    if any(k in m for k in ['exporte', 'télécharge', 'export', 'yaml', 'déployable']):
+        fmt = 'yaml' if 'yaml' in m else 'json'
+        return {'type': 'action', 'action': 'export_pipeline', 'params': {'format': fmt},
+                'message': f"Je vais exporter le pipeline en {fmt.upper()} déployable."}
+
+    if any(k in m for k in ['sql', 'requête', 'transforme', 'transformation']):
+        return {'type': 'action', 'action': 'generate_sql', 'params': {'description': message},
+                'message': "Je vais générer une transformation SQL, la tester sur un échantillon, puis tu valideras."}
+
+    # Détection d'un type de nœud à ajouter
+    for node_type, kws in _NODE_KEYWORDS.items():
+        if any(k in m for k in kws):
+            labels = {'mask_pii': 'Masquage RGPD', 'detect_anomalies': 'Détection anomalies',
+                      'quality_report': 'Rapport qualité', 'filter': 'Filtre', 'aggregate': 'Agrégation',
+                      'dedup': 'Dédoublonnage', 'join': 'Jointure', 'csv_reader': 'Source CSV',
+                      'file_export': 'Export'}
+            return {'type': 'action', 'action': 'add_node',
+                    'params': {'node_type': node_type, 'label': labels.get(node_type, node_type)},
+                    'message': f"Je vais ajouter un nœud « {labels.get(node_type, node_type)} » au pipeline."}
+
+    return {'type': 'reply', 'message': _get_fallback_response(message)}
+
+
+@ai_bp.route('/agent/plan', methods=['POST'])
+@jwt_required()
+def agent_plan():
+    """
+    Chat « mode action » : transforme un message en proposition d'action structurée
+    (ou réponse texte). N'EXÉCUTE RIEN — le front affiche l'action, l'utilisateur
+    confirme, puis l'exécution se fait via les endpoints existants.
+    """
+    data = request.get_json() or {}
+    message = data.get('message')
+    if not message and isinstance(data.get('messages'), list):
+        message = next((m.get('content') for m in reversed(data['messages'])
+                        if m.get('role') == 'user'), None)
+    if not message:
+        return jsonify({'error': 'message is required'}), 400
+
+    context = data.get('context') or {}
+    columns = context.get('columns') or []
+
+    system = (
+        "Tu es DataPipe Agent, un assistant qui PILOTE une plateforme ETL bancaire. "
+        "À partir du message de l'utilisateur, tu réponds en JSON STRICT.\n"
+        "Soit une réponse texte : {\"type\":\"reply\",\"message\":\"...\"}.\n"
+        "Soit UNE action à proposer : {\"type\":\"action\",\"action\":\"<nom>\","
+        "\"params\":{...},\"message\":\"explication en français\",\"warning\":\"... ou null\"}.\n"
+        f"Actions possibles : {', '.join(ACTION_CATALOG.keys())}.\n"
+        "Types de nœuds pour add_node : csv_reader, json_reader, sql_query, filter, map, "
+        "aggregate, join, sort, dedup, sql_transform, validate, mask_pii, detect_anomalies, "
+        "quality_report, file_export.\n"
+        f"Colonnes connues : {', '.join(columns) if columns else 'inconnues'}.\n"
+        "Tu ne fais qu'UNE action à la fois. Tu n'exécutes jamais : tu proposes."
+    )
+    raw = _call_llm(system=system, messages=[{'role': 'user', 'content': message}])
+
+    plan = None
+    if raw:
+        try:
+            cleaned = re.sub(r"```json\s*|```\s*", "", raw).strip()
+            parsed = _json.loads(cleaned)
+            if parsed.get('type') in ('reply', 'action'):
+                plan = parsed
+        except Exception:
+            pass
+    if plan is None:
+        plan = _plan_heuristic(message)
+
+    # Validation + garde-fous serveur
+    if plan.get('type') == 'action':
+        action = plan.get('action')
+        if action not in ACTION_CATALOG:
+            plan = {'type': 'reply', 'message': plan.get('message')
+                    or "Je n'ai pas compris l'action demandée."}
+        else:
+            spec = ACTION_CATALOG[action]
+            plan.setdefault('params', {})
+            if not plan.get('warning'):
+                plan['warning'] = spec['warn']
+            plan['requires_confirmation'] = True
+
+    plan['model'] = _llm_model_name() if raw else 'datapipe-analyst'
+    return jsonify(plan)
+
+
 # ─── Mock Intelligent Constantes & Helpers ─────────────────────────────────────
 import re
 import json as _json

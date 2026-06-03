@@ -616,3 +616,36 @@ class TestAIAgent:
         d = resp.get_json()
         assert d['validation']['safe'] is True
         assert 'DROP' not in d['generated_sql'].upper()
+
+
+class TestAgentPlan:
+    """Chat mode action : message -> action structurée à confirmer (sans exécution)."""
+
+    def _plan(self, client, headers, msg, ctx=None):
+        return post_json(client, '/api/v1/ai/agent/plan',
+                         {'message': msg, 'context': ctx or {}}, headers=headers)
+
+    def test_create_pipeline_intent(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "crée un nouveau pipeline appelé Conformité").get_json()
+        assert d['type'] == 'action'
+        assert d['action'] == 'create_pipeline'
+        assert d['requires_confirmation'] is True
+
+    def test_run_intent_has_warning(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "exécute le pipeline").get_json()
+        assert d['action'] == 'run_pipeline'
+        assert d['warning']  # garde-fou présent
+
+    def test_mask_intent_adds_node(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "masque les données sensibles des clients").get_json()
+        assert d['action'] == 'add_node'
+        assert d['params']['node_type'] == 'mask_pii'
+
+    def test_sql_intent(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "génère une requête SQL pour le total par type").get_json()
+        assert d['action'] == 'generate_sql'
+
+    def test_smalltalk_is_reply(self, client, auth_headers):
+        d = self._plan(client, auth_headers, "bonjour, tu vas bien ?").get_json()
+        assert d['type'] == 'reply'
+        assert d['message']
