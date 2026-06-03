@@ -1,4 +1,13 @@
 """OpenAPI 2.0 (Swagger) spec — DataPipe API v1.0"""
+import os
+
+
+SWAGGER_HOST = os.getenv('SWAGGER_HOST', 'https://datapipe.duckdns.org')
+SWAGGER_SCHEMES = [
+    scheme.strip()
+    for scheme in os.getenv('SWAGGER_SCHEMES', 'http').split(',')
+    if scheme.strip()
+]
 
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",
@@ -15,9 +24,9 @@ SWAGGER_TEMPLATE = {
         "contact": {"email": "balaandeguefrancoislionnel@gmail.com"},
         "license": {"name": "MIT"},
     },
-    "host": "localhost:5000",
+    "host": SWAGGER_HOST,
     "basePath": "/api/v1",
-    "schemes": ["http", "https"],
+    "schemes": SWAGGER_SCHEMES,
     "consumes": ["application/json"],
     "produces": ["application/json"],
     "securityDefinitions": {
