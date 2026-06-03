@@ -29,6 +29,24 @@ class TestRegister:
         })
         assert resp.status_code == 201
 
+    def test_duplicate_org_name_returns_conflict(self, client):
+        first = post_json(client, f'{BASE}/register', {
+            'email': 'org-owner-1@bank.ci',
+            'name': 'Org Owner 1',
+            'password': 'Secure2026!',
+            'org_name': 'Banque CI Collision',
+        })
+        assert first.status_code == 201
+
+        second = post_json(client, f'{BASE}/register', {
+            'email': 'org-owner-2@bank.ci',
+            'name': 'Org Owner 2',
+            'password': 'Secure2026!',
+            'org_name': 'Banque CI Collision',
+        })
+        assert second.status_code == 409
+        assert second.get_json()['error'] == 'Organization name already exists'
+
     def test_duplicate_email(self, client, registered_user):
         resp = post_json(client, f'{BASE}/register', {
             'email': 'test@datapipe.io',

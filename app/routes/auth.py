@@ -32,6 +32,9 @@ def register():
         from ..utils import slugify
         from ..models import Workspace
         slug = slugify(data['org_name'])
+        if Org.query.filter_by(slug=slug, deleted_at=None).first():
+            db.session.rollback()
+            return jsonify({'error': 'Organization name already exists'}), 409
         org = Org(name=data['org_name'], slug=slug)
         db.session.add(org)
         db.session.flush()

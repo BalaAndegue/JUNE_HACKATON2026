@@ -1,12 +1,15 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+import json
 
 from ..extensions import db
 from ..models import Notification, Alert
-from ..utils import validate_required, check_pipeline_access, paginate
+from ..services.email import EmailConfigurationError, EmailDeliveryError, send_email
+from ..utils import validate_required, paginate
 
 notifications_bp = Blueprint('notifications', __name__)
+
+ALERT_CHANNELS = {'in_app', 'email', 'slack', 'sms'}
 
 
 @notifications_bp.route('/notifications', methods=['GET'])
@@ -79,16 +82,21 @@ def create_alert():
     err = validate_required(data, ['name', 'condition'])
     if err:
         return jsonify({'error': err}), 400
+    channel = data.get('channel', 'in_app')
+    if channel not in ALERT_CHANNELS:
+        return jsonify({'error': 'Invalid alert channel'}), 400
+    recipients = data.get('recipients') or []
+    if channel == 'email' and not recipients:
+        return jsonify({'error': 'Email alerts require at least one recipient'}), 400
 
     alert = Alert(
         pipeline_id=data.get('pipeline_id'),
         name=data['name'],
         condition=data['condition'],
-        channel=data.get('channel', 'email'),
+        channel=channel,
         active=data.get('active', True),
     )
-    if data.get('recipients'):
-        alert._recipients = __import__('json').dumps(data['recipients'])
+    alert._recipients = json.dumps(recipients)
     db.session.add(alert)
     db.session.commit()
     return jsonify(alert.to_dict()), 201
@@ -112,9 +120,13 @@ def update_alert(alert_id):
     data = request.get_json() or {}
     for field in ['name', 'condition', 'channel', 'active']:
         if field in data:
+            if field == 'channel' and data[field] not in ALERT_CHANNELS:
+                return jsonify({'error': 'Invalid alert channel'}), 400
             setattr(alert, field, data[field])
     if 'recipients' in data:
-        alert._recipients = __import__('json').dumps(data['recipients'])
+        alert._recipients = json.dumps(data['recipients'] or [])
+    if alert.channel == 'email' and not alert.recipients:
+        return jsonify({'error': 'Email alerts require at least one recipient'}), 400
     db.session.commit()
     return jsonify(alert.to_dict())
 
@@ -136,6 +148,27 @@ def test_alert(alert_id):
     alert = Alert.query.get(alert_id)
     if not alert:
         return jsonify({'error': 'Alert not found'}), 404
+    if alert.channel == 'email':
+        try:
+            result = send_email(
+                alert.recipients,
+                subject=f'[DataPipe] Test alert: {alert.name}',
+                body=(
+                    f'Alerte DataPipe: {alert.name}\n'
+                    f'Condition: {alert.condition}\n\n'
+                    'Ceci est un email de test envoyé depuis DataPipe.'
+                ),
+            )
+        except EmailConfigurationError as exc:
+            return jsonify({'error': str(exc), 'code': 'email_not_configured'}), 503
+        except EmailDeliveryError as exc:
+            return jsonify({'error': str(exc), 'code': 'email_delivery_failed'}), 503
+        return jsonify({
+            'message': f'Test alert "{alert.name}" sent via email',
+            'alert_id': alert_id,
+            'recipients': result['recipients'],
+            'simulated': False,
+        })
     return jsonify({
         'message': f'Test alert "{alert.name}" sent via {alert.channel}',
         'alert_id': alert_id,
