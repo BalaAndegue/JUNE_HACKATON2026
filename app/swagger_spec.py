@@ -5,7 +5,7 @@ import os
 SWAGGER_HOST = os.getenv('SWAGGER_HOST', 'https://datapipe.duckdns.org')
 SWAGGER_SCHEMES = [
     scheme.strip()
-    for scheme in os.getenv('SWAGGER_SCHEMES', 'http').split(',')
+    for scheme in os.getenv('SWAGGER_SCHEMES', 'https').split(',')
     if scheme.strip()
 ]
 
