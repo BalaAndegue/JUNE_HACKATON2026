@@ -1,8 +1,28 @@
 """Tests d'intégration — Organisations & Workspaces (14 endpoints)."""
 import pytest
+from uuid import uuid4
 from tests.conftest import post_json, patch_json
 
 BASE = '/api/v1/orgs'
+
+
+def _register_and_login(client, prefix='member'):
+    email = f'{prefix}_{uuid4().hex[:8]}@bank.ci'
+    password = 'Secure2026!'
+    register = post_json(client, '/api/v1/auth/register', {
+        'email': email,
+        'name': 'Org Member',
+        'password': password,
+    })
+    assert register.status_code == 201
+
+    login = post_json(client, '/api/v1/auth/login', {
+        'email': email,
+        'password': password,
+    })
+    assert login.status_code == 200
+    token = login.get_json()['access_token']
+    return {'Authorization': f'Bearer {token}'}
 
 
 class TestOrgs:
@@ -56,6 +76,17 @@ class TestOrgs:
                           headers=auth_headers)
         assert resp.status_code == 200
 
+    def test_delete_org(self, client, auth_headers):
+        created = post_json(client, BASE, {
+            'name': f'Org Delete {uuid4().hex[:5]}',
+        }, headers=auth_headers)
+        assert created.status_code == 201
+        created_org_id = created.get_json()['id']
+
+        delete_resp = client.delete(f'{BASE}/{created_org_id}', headers=auth_headers)
+        assert delete_resp.status_code == 200
+        assert delete_resp.get_json()['message'] == 'Organization deleted'
+
 
 class TestOrgMembers:
     def test_list_members(self, client, auth_headers, org_id):
@@ -96,6 +127,42 @@ class TestOrgMembers:
                          {'token': 'invalid_token_xyz'}, headers=auth_headers)
         assert resp.status_code == 400
 
+    def test_accept_invite_success_and_manage_member(self, client, auth_headers, org_id):
+        invite_resp = post_json(client, f'{BASE}/{org_id}/members/invite', {
+            'email': f'invite_{uuid4().hex[:6]}@bank.ci',
+            'role': 'viewer',
+        }, headers=auth_headers)
+        assert invite_resp.status_code == 201
+
+        from app.models import OrgInvite
+        with client.application.app_context():
+            invite = OrgInvite.query.filter_by(id=invite_resp.get_json()['invite_id']).first()
+            token = invite.token
+
+        member_headers = _register_and_login(client, prefix='invited')
+        accept_resp = post_json(client, f'{BASE}/{org_id}/members/accept-invite', {
+            'token': token,
+        }, headers=member_headers)
+        assert accept_resp.status_code == 200
+
+        members_resp = client.get(f'{BASE}/{org_id}/members', headers=auth_headers)
+        assert members_resp.status_code == 200
+        invited_member = next(
+            (m for m in members_resp.get_json()['members'] if m['email'].startswith('invited_')),
+            None
+        )
+        assert invited_member is not None
+
+        patch_resp = patch_json(client, f'{BASE}/{org_id}/members/{invited_member["user_id"]}', {
+            'role': 'editor',
+        }, headers=auth_headers)
+        assert patch_resp.status_code == 200
+        assert patch_resp.get_json()['role'] == 'editor'
+
+        delete_resp = client.delete(f'{BASE}/{org_id}/members/{invited_member["user_id"]}', headers=auth_headers)
+        assert delete_resp.status_code == 200
+        assert delete_resp.get_json()['message'] == 'Member removed'
+
 
 class TestWorkspaces:
     def test_list_workspaces(self, client, auth_headers, org_id):
@@ -134,6 +201,21 @@ class TestWorkspaces:
         assert resp.status_code == 200
         d = resp.get_json()
         assert d['color'] == '#22c55e'
+
+    def test_delete_workspace(self, client, auth_headers, org_id):
+        created = post_json(client, f'{BASE}/{org_id}/workspaces', {
+            'name': f'Tmp WS {uuid4().hex[:4]}',
+            'description': 'to delete',
+        }, headers=auth_headers)
+        assert created.status_code == 201
+        ws_id = created.get_json()['id']
+
+        del_resp = client.delete(f'{BASE}/{org_id}/workspaces/{ws_id}', headers=auth_headers)
+        assert del_resp.status_code == 200
+        assert del_resp.get_json()['message'] == 'Workspace deleted'
+
+        get_resp = client.get(f'{BASE}/{org_id}/workspaces/{ws_id}', headers=auth_headers)
+        assert get_resp.status_code == 404
 
     def test_get_workspace_not_found(self, client, auth_headers, org_id):
         resp = client.get(f'{BASE}/{org_id}/workspaces/ws_doesnotexist', headers=auth_headers)

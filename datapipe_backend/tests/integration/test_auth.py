@@ -1,9 +1,29 @@
 """Tests d'intégration — Auth & Sessions (14 endpoints)."""
 import pytest
 import json
+from uuid import uuid4
 from tests.conftest import post_json, patch_json, delete_json
 
 BASE = '/api/v1/auth'
+
+
+def _create_and_login_user(client, password='Secure2026!'):
+    email = f"tmp_{uuid4().hex[:8]}@bank.ci"
+    register_resp = post_json(client, f'{BASE}/register', {
+        'email': email,
+        'name': 'Temp User',
+        'password': password,
+    })
+    assert register_resp.status_code == 201, register_resp.get_data(as_text=True)
+
+    login_resp = post_json(client, f'{BASE}/login', {
+        'email': email,
+        'password': password,
+    })
+    assert login_resp.status_code == 200, login_resp.get_data(as_text=True)
+    tokens = login_resp.get_json()
+    headers = {'Authorization': f"Bearer {tokens['access_token']}"}
+    return email, password, tokens, headers
 
 
 class TestRegister:
@@ -158,6 +178,37 @@ class TestSessions:
         assert 'revoked_count' in d
         assert 'message' in d
 
+    def test_delete_session(self, client):
+        _, _, _, headers = _create_and_login_user(client)
+        sessions_resp = client.get(f'{BASE}/sessions', headers=headers)
+        assert sessions_resp.status_code == 200
+        sessions = sessions_resp.get_json()['sessions']
+        assert len(sessions) >= 1
+
+        delete_resp = client.delete(f'{BASE}/sessions/{sessions[0]["id"]}', headers=headers)
+        assert delete_resp.status_code == 200
+        assert 'message' in delete_resp.get_json()
+
+
+class TestTokenLifecycle:
+    def test_refresh_token(self, client):
+        _, _, tokens, _ = _create_and_login_user(client)
+        refresh_headers = {'Authorization': f"Bearer {tokens['refresh_token']}"}
+        resp = client.post(f'{BASE}/refresh-token', headers=refresh_headers, json={})
+        assert resp.status_code == 200
+        d = resp.get_json()
+        assert 'access_token' in d
+        assert 'refresh_token' in d
+        assert d['expires_in'] == 900
+
+    def test_logout(self, client):
+        _, _, tokens, headers = _create_and_login_user(client)
+        resp = post_json(client, f'{BASE}/logout', {
+            'refresh_token': tokens['refresh_token'],
+        }, headers=headers)
+        assert resp.status_code == 200
+        assert resp.get_json()['message'] == 'Logged out successfully'
+
 
 class TestForgotPassword:
     def test_existing_email(self, client):
@@ -208,6 +259,27 @@ class TestVerifyEmail:
 
 
 class TestChangePassword:
+    def test_success(self, client):
+        email, password, _, headers = _create_and_login_user(client, password='OldPass2026!')
+        resp = post_json(client, f'{BASE}/change-password', {
+            'current_password': password,
+            'new_password': 'NewPass2026!',
+        }, headers=headers)
+        assert resp.status_code == 200
+        assert 'Password updated' in resp.get_json()['message']
+
+        old_login = post_json(client, f'{BASE}/login', {
+            'email': email,
+            'password': password,
+        })
+        assert old_login.status_code == 401
+
+        new_login = post_json(client, f'{BASE}/login', {
+            'email': email,
+            'password': 'NewPass2026!',
+        })
+        assert new_login.status_code == 200
+
     def test_wrong_current_password(self, client, auth_headers):
         resp = post_json(client, f'{BASE}/change-password', {
             'current_password': 'WrongPassword!',
@@ -225,3 +297,16 @@ class TestChangePassword:
             'current_password': 'a', 'new_password': 'b',
         })
         assert resp.status_code == 401
+
+
+class TestDeleteMe:
+    def test_delete_me_success(self, client):
+        _, password, _, headers = _create_and_login_user(client, password='DeleteMe2026!')
+        resp = delete_json(client, f'{BASE}/me', {'password': password}, headers=headers)
+        assert resp.status_code == 200
+        assert resp.get_json()['message'] == 'Account deleted'
+
+    def test_delete_me_invalid_password(self, client):
+        _, _, _, headers = _create_and_login_user(client)
+        resp = delete_json(client, f'{BASE}/me', {'password': 'wrong'}, headers=headers)
+        assert resp.status_code == 400
