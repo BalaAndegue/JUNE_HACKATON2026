@@ -80,6 +80,26 @@ def _send_document(chat_id, filename, content, caption='', mime='text/csv'):
         return None
 
 
+def _send_photo(chat_id, photo_url, caption=''):
+    """Envoie une image (sendPhoto via URL — Telegram récupère l'image)."""
+    return _tg('sendPhoto', {'chat_id': chat_id, 'photo': photo_url, 'caption': caption[:1000]})
+
+
+def _quickchart_url(labels, values, title, kind='bar'):
+    """Construit une URL QuickChart (image PNG d'un graphe Chart.js)."""
+    import urllib.parse
+    config = {
+        'type': kind,
+        'data': {'labels': labels,
+                 'datasets': [{'label': title, 'data': values,
+                               'backgroundColor': '#ff6d35'}]},
+        'options': {'plugins': {'title': {'display': True, 'text': title}},
+                    'legend': {'display': False}},
+    }
+    qs = urllib.parse.urlencode({'c': json.dumps(config), 'backgroundColor': 'white', 'width': 600, 'height': 360})
+    return f'https://quickchart.io/chart?{qs}'
+
+
 def _latest_run(pipeline):
     from ..models import Run
     return (Run.query.filter_by(pipeline_id=pipeline.id)
@@ -212,7 +232,8 @@ def telegram_webhook():
 
         if cmd in ('/start', '/help'):
             _send(chat_id, "👋 Je pilote DataPipe.\n"
-                           "Commandes : /pipeline · /run · /new <nom> · /preview · /audit\n"
+                           "Commandes : /pipeline · /run · /new <nom> · /preview · /audit · "
+                           "/anomalies · /chart\n"
                            "Ou écris en clair : « masque les clients puis exécute ».\n"
                            "Tu peux aussi m'envoyer un fichier CSV/JSON.")
         elif cmd == '/pipeline':
@@ -252,6 +273,60 @@ def telegram_webhook():
             _send_document(chat_id, 'rapport_audit.json',
                            json.dumps(rep, indent=2, ensure_ascii=False),
                            caption="Rapport d'audit conformité", mime='application/json')
+        elif cmd == '/anomalies':
+            run = _latest_run(pipe) if pipe else None
+            if not run or not run.node_results:
+                _send(chat_id, "Exécute d'abord le pipeline (/run).")
+                return jsonify({'ok': True})
+            suspects = []
+            for res in run.node_results.values():
+                for row in res.get('output_preview', []):
+                    if row.get('is_anomaly'):
+                        suspects.append(row)
+            if not suspects:
+                _send(chat_id, "✅ Aucune transaction suspecte (ajoute un nœud « Détection anomalies »).")
+                return jsonify({'ok': True})
+            lines = ["🚨 Transactions suspectes :"]
+            for r in suspects[:12]:
+                idv = r.get('transaction_id') or r.get('id') or '?'
+                amt = r.get('amount') or r.get('montant') or '?'
+                reason = r.get('anomaly_reason') or ''
+                lines.append(f"• {idv} — {amt}  ({reason})")
+            _send(chat_id, '\n'.join(lines))
+            import csv as _csv, io as _io
+            buf = _io.StringIO()
+            w = _csv.DictWriter(buf, fieldnames=list(suspects[0].keys()))
+            w.writeheader(); w.writerows(suspects)
+            _send_document(chat_id, 'anomalies.csv', buf.getvalue(),
+                           caption=f"{len(suspects)} transaction(s) suspecte(s)")
+        elif cmd == '/chart':
+            run = _latest_run(pipe) if pipe else None
+            if not run or not run.node_results:
+                _send(chat_id, "Exécute d'abord le pipeline (/run).")
+                return jsonify({'ok': True})
+            nid = list(run.node_results.keys())[-1]
+            rows = run.node_results[nid].get('output_preview', [])
+            if not rows:
+                _send(chat_id, "Aucune donnée à tracer.")
+                return jsonify({'ok': True})
+
+            def _isnum(v):
+                try:
+                    float(v); return True
+                except (TypeError, ValueError):
+                    return False
+
+            cols = list(rows[0].keys())
+            value_col = next((c for c in cols
+                              if all(_isnum(r.get(c)) for r in rows if r.get(c) is not None)), None)
+            if not value_col:
+                _send(chat_id, "Aucune colonne numérique à tracer.")
+                return jsonify({'ok': True})
+            label_col = next((c for c in cols if c != value_col), cols[0])
+            labels = [str(r.get(label_col)) for r in rows][:20]
+            values = [float(r.get(value_col) or 0) for r in rows][:20]
+            _send_photo(chat_id, _quickchart_url(labels, values, f"{value_col} par {label_col}"),
+                        caption=f"📊 {value_col} par {label_col}")
         else:
             _send(chat_id, "Commande inconnue. Tape /help")
         return jsonify({'ok': True})
