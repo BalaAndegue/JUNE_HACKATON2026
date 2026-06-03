@@ -1,0 +1,279 @@
+Guide Officiel du Hackathon J.U.I.N 2026
+: Édition Cursor
+Introduction
+Bienvenue à l'édition J.U.I.N 2026 du Hackathon Interuniversitaire. Cette édition spéciale est
+dédiée au Prototypage Rapide d'Applications d'Entreprise & Systèmes Académiques
+Complexes. L'objectif est de stimuler l'innovation et la créativité en exploitant les outils de
+développement modernes, avec un accent particulier sur l'environnement de développement
+assisté par IA : Cursor.
+Ce guide officiel a pour but de vous fournir toutes les informations nécessaires pour exceller, en
+détaillant les thèmes, les règles d'évaluation, et les opportunités de bonus liées à l'intégration de
+l'Intelligence Artificielle. Préparez-vous à transformer vos idées en Minimum Viable Products
+(MVP) fonctionnels en un temps record, en tirant parti de la puissance de Cursor.
+
+La Philosophie Cursor au Cœur du Hackathon
+Cursor est bien plus qu'un simple IDE ; c'est un partenaire de développement intelligent conçu
+pour maximiser votre productivité. Sa philosophie repose sur un minimalisme fonctionnel et une
+performance accrue grâce à l'intégration native de l'IA. Pour ce Hackathon, Cursor sera votre
+allié le plus précieux pour accélérer le processus de build de votre MVP.
+
+Directive Bonus IA: Maximisez Votre Score
+Pour cette édition, l'intégration de l'Intelligence Artificielle n'est pas seulement encouragée, elle
+est récompensée ! Un bonus de points substantiel (jusqu'à +3 points sur la note finale) sera
+accordé aux équipes qui intègrent de manière fluide et fonctionnelle un composant d'IA dans
+leur solution. Ce bonus ne récompense pas une simple idée, mais une implémentation
+technique concrète.
+
+Type d'Intégration
+IA
+
+Description
+
+Exemples
+d'Implémentation
+
+Impact Attendu
+
+Appel d'API
+
+Utilisation de
+services IA externes
+
+OpenAI GPT,
+Google AI, Hugging
+Face API
+
+Accès à des
+modèles puissants
+sans infrastructure
+
+Type d'Intégration
+IA
+
+Description
+
+Exemples
+d'Implémentation
+
+Impact Attendu
+
+lourde
+
+Modèle Local
+
+Déploiement d'un
+modèle léger en
+local
+
+Modèles
+embarqués pour
+traitement rapide
+
+Indépendance,
+faible latence
+
+Agent IA
+
+Système autonome
+prenant des
+décisions
+
+Agents de
+planification,
+d'optimisation
+
+Automatisation de
+tâches complexes
+
+Pipeline RAG
+
+Recherche
+augmentée par
+génération
+
+Recherche
+sémantique sur
+base de
+connaissances
+
+Réponses
+contextuelles et
+précises
+
+Catégories et Thèmes du Hackathon
+Le Hackathon J.U.I.N 2026 propose 15 thèmes répartis en 4 catégories, couvrant un large
+éventail de défis techniques et d'opportunités d'innovation. Chaque thème est conçu pour être
+abordé avec une approche de prototypage rapide, idéalement assistée par Cursor.
+
+Catégorie 1: EdTech & Recherche Scientifique
+Cette catégorie vise à moderniser et optimiser les processus académiques et de recherche.
+●​ Thème 1: Le "Notion" de la Recherche Doctorale
+○​ Concept: Un outil collaboratif de gestion de projet et de prise de notes basé sur
+Markdown pour doctorants et chercheurs. Il permet de structurer, rédiger et suivre
+l'avancement des travaux scientifiques, de lier les chapitres et de centraliser la
+bibliographie.
+○​ Opportunité Bonus IA: Intégration d'un agent IA capable de générer
+automatiquement un résumé (abstract) ou une table des matières dynamique à
+partir du contenu Markdown accumulé.
+​
+●​ Thème 2: OpenScience Hub - Le Répertoire Institutionnel
+○​ Concept: Une plateforme d'archivage, de classification et de consultation fluide des
+
+travaux scientifiques universitaires (mémoires, thèses, articles) avec un moteur de
+recherche indexé à facettes.
+○​ Opportunité Bonus IA: Analyse automatique des PDF téléversés pour en extraire
+instantanément les métadonnées (auteurs, mots-clés, résumé) et suggérer des
+thématiques associées.
+​
+●​ Thème 3: Peer Review - Validation Collaborative Universitaire
+○​ Concept: Un espace de travail en temps réel permettant aux comités de lecture
+d'annoter en marge, de commenter et de voter sur la validation des soumissions
+d'articles scientifiques.
+○​ Opportunité Bonus IA: Un copilote d'audit scientifique qui détecte
+automatiquement les faiblesses méthodologiques de base ou les risques de plagiat
+dans le texte soumis.
+​
+●​ Thème 4: ScholarTrack - Pilotage des Budgets de Recherche
+○​ Concept: Une application d'entreprise dédiée à la gouvernance financière des
+projets de recherche, liant les budgets alloués aux étapes de publication validées.
+○​ Opportunité Bonus IA: Un moteur de recommandation budgétaire qui alerte sur
+les sous-utilisations ou surutilisations de lignes financières en fonction de
+l'historique du projet.
+
+Catégorie 2: Outils Collaboratifs & Solutions Enterprise
+Cette catégorie se concentre sur l'amélioration de la productivité et de la collaboration au sein
+des grandes entreprises.
+●​ Thème 5: Corporate Wiki - Base de Connaissances "Markdown-First"
+○​ Concept: Une plateforme de gestion des connaissances interne inspirée de Notion,
+structurée en arborescence de fichiers Markdown éditables à la volée avec gestion
+des droits d'accès.
+○​ Opportunité Bonus IA: Un moteur de recherche sémantique de type RAG
+(Retrieval-Augmented Generation) qui répond aux questions des collaborateurs en
+interrogeant directement la base Wiki.
+​
+●​ Thème 6: TaskFlow - Gestionnaire de Tâches Haute Performance
+○​ Concept: Un gestionnaire de tickets et de sprints ultra-rapide, optimisé pour une
+utilisation exclusive au clavier avec affichage Kanban fluide et instantané.
+○​ Opportunité Bonus IA: Un planificateur intelligent qui analyse la vélocité passée
+de l'équipe pour estimer automatiquement la date de livraison réaliste d'un sprint.
+​
+●​ Thème 7: MeetingSync - Centralisation des Décisions d'Équipe
+○​ Concept: Un éditeur collaboratif de réunions synchronisé en temps réel permettant
+de lister l'ordre du jour, de saisir les notes en direct et d'assigner instantanément
+des tâches.
+
+○​ Opportunité Bonus IA: Intégration d'un module de transcription vocale ou de
+résumé automatique pour extraire la liste brute des actions à entreprendre à la fin
+de la réunion.
+​
+●​ Thème 8: SpecCraft - Générateur de Spécifications Techniques
+○​ Concept: Un studio guidé par formulaires dynamiques structurés qui compile les
+besoins métier pour générer un document technique d'architecture logicielle
+standardisé.
+○​ Opportunité Bonus IA: Un analyseur de spécifications qui détecte les
+incohérences logiques dans les exigences exprimées et propose des ajustements
+d'architecture.
+
+Catégorie 3: Logistique, FinTech & Data Engineering
+Cette catégorie aborde les défis complexes liés au traitement des données, à la finance et à la
+logistique.
+●​ Thème 9: DataPipe - ETL Visuel pour Pipelines Bancaires
+○​ Concept: Une interface web nodale (visuelle) permettant de concevoir des flux
+d'ingestion de données (fichiers CSV, JSON, bases SQL) et d'appliquer des
+transformations à la volée.
+○​ Opportunité Bonus IA: Un assistant capable de générer le code de transformation
+de données complexe (requête SQL ou script de nettoyage) à partir d'une
+description textuelle de l'utilisateur.
+​
+●​ Thème 10: Supply Chain Radar - Superviseur Multi-entrepôts
+○​ Concept: Un tableau de bord décisionnel centralisé affichant l'état des inventaires,
+les flux d'approvisionnement en cours et les alertes de goulots d'étranglement
+logistiques.
+○​ Opportunité Bonus IA: Un algorithme prédictif ou un agent d'inventaire anticipant
+les ruptures de stocks imminentes en fonction des tendances de commandes
+modélisées.
+​
+●​ Thème 11: FinAudit - Détecteur d'Anomalies Comptables
+○​ Concept: Une application web sécurisée permettant d'importer des fichiers
+comptables volumineux et d'exécuter instantanément des algorithmes de contrôle
+de cohérence.
+○​ Opportunité Bonus IA: Utilisation de modèles d'apprentissage non supervisé
+(clustering) pour identifier les transactions atypiques ou suspectes sortant des
+schémas habituels.
+​
+●​ Thème 12: RegTech - Assistant Douanier Doublé AfCFTA
+○​ Concept: Un simulateur douanier qui permet aux entreprises d'import-export de
+calculer instantanément les taxes applicables à un produit selon son pays d'origine
+
+et de destination, en tenant compte de la Zone de Libre-Échange Continentale
+Africaine (ZLECAF / AfCFTA).
+○​ Opportunité Bonus IA: Un module de vision ou de traitement du langage naturel
+classifiant automatiquement une marchandise brute à partir de sa description
+textuelle vers son code douanier exact.
+
+Catégorie 4: Communication, Infrastructure & DevTools
+Cette catégorie est dédiée aux outils améliorant la productivité des développeurs, la
+communication technique et la gestion des infrastructures.
+●​ Thème 13: CommHQ - Le Messager Technique Sécurisé
+○​ Concept: Une application de chat d'entreprise organisée par canaux thématiques,
+intégrant nativement un rendu propre des blocs de code, de la coloration
+syntaxique et du Markdown.
+○​ Opportunité Bonus IA: Un bot de canal capable de résumer en trois phrases clés
+les discussions d'un groupe afin de permettre aux managers de rattraper les
+décisions clés rapidement.
+​
+●​ Thème 14: InfraWatch - Dashboard de Supervision Cloud pour DSI
+○​ Concept: Une console unifiée de monitoring affichant en temps réel la santé, les
+coûts opérationnels et la disponibilité des microservices de l'organisation.
+○​ Opportunité Bonus IA: Un interpréteur d'erreurs intelligent qui analyse les logs
+bruts lors d'un incident système pour traduire la panne en recommandations
+d'actions claires.
+​
+●​ Thème 15: API-Forge - Studio de Prototypage Rapide d'APIs
+○​ Concept: Une application web d'entreprise permettant de configurer
+graphiquement des points de terminaison (endpoints) et d'exposer instantanément
+des maquettes d'APIs (Mock APIs).
+○​ Opportunité Bonus IA: Génération automatique de jeux de données fictifs
+réalistes (noms, montants, dates, localisations) adaptés au domaine métier choisi
+grâce à l'IA.
+
+Le Workflow Gagnant avec Cursor : Accélérez Votre
+Prototypage
+Pour réussir ce Hackathon et livrer un MVP impressionnant en 24 heures, une maîtrise des
+fonctionnalités clés de Cursor est essentielle. Voici les outils qui feront la différence :
+1.​ Mode Plan (Shift+Tab)
+○​ Description: Permet de définir l'architecture de votre solution, de décomposer les
+tâches et de planifier votre code avant même d'écrire la première ligne. Cursor vous
+aide à structurer votre pensée et à générer des ébauches de code basées sur votre
+plan.
+
+○​ Avantage Hackathon: Gagnez un temps précieux en évitant les réécritures
+majeures et en assurant une vision claire du projet dès le départ.
+​
+2.​ Composer (Cmd+I)
+○​ Description: Une interface puissante pour gérer les modifications multi-fichiers de
+manière cohérente. Le Composer vous permet de générer ou de modifier du code à
+travers plusieurs fichiers simultanément, en maintenant la synchronisation et la
+logique.
+○​ Avantage Hackathon: Idéal pour créer des fonctionnalités complètes (front-end et
+back-end) en une seule opération, réduisant la complexité et les erreurs.
+​
+3.​ Mode YOLO (Paramètres > Beta)
+○​ Description: Une fonctionnalité expérimentale qui permet à l'IA de Cursor
+d'auto-corriger les erreurs de build, de linter et même certaines erreurs logiques. Il
+agit comme un copilote ultra-réactif qui nettoie votre code en temps réel.
+○​ Avantage Hackathon: Éliminez les blocages liés aux erreurs de syntaxe ou de
+configuration, et concentrez-vous sur l'innovation et la logique métier de votre
+application.
+
+Conclusion: Visez l'Excellence avec Cursor
+Le Hackathon J.U.I.N 2026 est une opportunité unique de démontrer votre capacité à innover
+sous contrainte de temps. En adoptant les méthodologies de prototypage rapide et en exploitant
+pleinement les capacités d'IA de Cursor, vous avez toutes les cartes en main pour livrer un MVP
+robuste, fonctionnel et impressionnant.
+Nous vous encourageons à explorer toutes les facettes de Cursor et à laisser libre cours à votre
+créativité. La vitesse d'exécution est votre meilleur atout pour transformer les défis de ces 24
+heures en succès concrets.
+Bon Hackathon à toutes les équipes !
+
+
