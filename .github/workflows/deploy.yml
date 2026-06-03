@@ -1,0 +1,118 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["BALA_backend"]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          cd datapipe_backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests with pytest
+        run: |
+          cd datapipe_backend
+          pytest
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_name: ${{ steps.lower.outputs.image }} # On exporte le nom en minuscule
+    steps:
+      - uses: actions/checkout@v4
+
+      # ÉTAPE CRUCIALE : On met le nom en minuscules ici
+      - name: Lowercase image name
+        id: lower
+        run: echo "image=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.lower.outputs.image }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./datapipe_backend
+          file: ./datapipe_backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script: |
+            # On définit le nom de l'image en minuscules pour le VPS aussi
+            IMAGE_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+            
+            # Aller dans le dossier du projet sur le VPS
+            cd ${{ secrets.DEPLOY_PATH || '~/JUNE_HACKATON2026' }}
+            
+            # Mettre à jour le code source depuis git
+            echo "Mise à jour du code source..."
+            git fetch origin BALA_backend
+            git checkout BALA_backend
+            git pull origin BALA_backend
+            
+            # Aller dans le sous-dossier du backend
+            cd datapipe_backend
+            
+            # Configuration initiale de .env si nécessaire
+            if [ ! -f .env ]; then
+              echo "Warning: .env file not found. Copying .env.example..."
+              cp .env.example .env
+            fi
+            
+            # Connexion au registre sur le VPS pour avoir le droit de pull
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # On passe la variable DOCKER_IMAGE directement à docker compose
+            echo "Téléchargement de la nouvelle image et redémarrage..."
+            DOCKER_IMAGE=${{ env.REGISTRY }}/$IMAGE_LOWER:latest docker compose pull
+            DOCKER_IMAGE=${{ env.REGISTRY }}/$IMAGE_LOWER:latest docker compose up -d
+            
+            # Nettoyage des anciennes images
+            docker image prune -f
+            
+            echo "Déploiement terminé !"

@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   backend:
-    build: .
+    image: ${DOCKER_IMAGE:-datapipe_backend:latest}
+    build:
+      context: .
     container_name: datapipe_backend
     restart: always
     ports:
