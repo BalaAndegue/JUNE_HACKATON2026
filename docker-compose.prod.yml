@@ -1,0 +1,38 @@
+# Override PROD : nginx reverse-proxy + HTTPS (Let's Encrypt) sur un seul domaine.
+# Usage : docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Prérequis : un .env racine avec DOMAIN=... et CERTBOT_EMAIL=...
+
+services:
+  frontend:
+    build:
+      args:
+        # Le front appellera l'API sur le même domaine (nginx route /api -> backend)
+        NEXT_PUBLIC_API_URL: https://${DOMAIN}
+
+  nginx:
+    image: nginx:alpine
+    container_name: datapipe_nginx
+    restart: always
+    depends_on: [backend, frontend]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_web:/var/www/certbot:ro
+
+  certbot:
+    image: certbot/certbot
+    container_name: datapipe_certbot
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_web:/var/www/certbot
+    # Renouvellement auto toutes les 12h (le cert initial est obtenu via init-letsencrypt.sh)
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
+
+volumes:
+  certbot_conf:
+  certbot_web:

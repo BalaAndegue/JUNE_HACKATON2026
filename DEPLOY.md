@@ -114,3 +114,25 @@ FRONTEND_URL=https://TON-DOMAINE      # pour les liens éditeur dans le bot
 ```
 Au démarrage, le backend **enregistre le webhook tout seul** (`setWebhook` + menu de commandes).
 Le **webhook remplace le poller** → ne lance PAS `telegram_bot.py` en prod.
+
+## 🔒 PROD avec HTTPS sur un seul domaine (nginx + Let's Encrypt)
+Sert **tout** sur `https://TON-DOMAINE` (`/` → frontend, `/api` → backend, SSE compris).
+
+Prérequis : un **nom de domaine** pointant (DNS A) vers l'IP du VPS, ports **80 et 443** ouverts.
+
+```bash
+git clone <repo> && cd <repo> && git checkout BACKEND
+cp .env.example .env                       # -> DOMAIN=ton-domaine.com, CERTBOT_EMAIL=toi@ex.com
+nano datapipe_backend/.env                 # PUBLIC_URL=https://ton-domaine.com  +  FRONTEND_URL=https://ton-domaine.com
+sh nginx/init-letsencrypt.sh               # obtient le certificat puis lance toute la stack
+```
+- Au démarrage, le backend **enregistre le webhook Telegram tout seul** (PUBLIC_URL) — zéro poller.
+- Le frontend est buildé avec `NEXT_PUBLIC_API_URL=https://ton-domaine.com` (appels API via nginx).
+- Renouvellement TLS **automatique** (service `certbot`, toutes les 12h).
+
+Mises à jour ensuite :
+```bash
+git pull && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+> Sans domaine (IP seulement), reste en HTTP : `docker compose up -d --build` (ports 3000/5000).
