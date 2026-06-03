@@ -80,10 +80,64 @@ class ExecutionContext:
         # DuckDB resolves the registered view directly.
         return con.execute(sql).fetchdf()
 
+    # --- real data sources (HTTP + SQL datasource) --------------------------
+    def fetch_http(self, url, method='GET', headers=None, body=None):
+        """Fetch JSON from an HTTP API and normalise it to a DataFrame."""
+        import json as _json
+        import urllib.request
+        data = (_json.dumps(body).encode() if body else None)
+        req = urllib.request.Request(url, data=data, method=(method or 'GET').upper())
+        req.add_header('User-Agent', 'DataPipe/1.0')
+        req.add_header('Accept', 'application/json')
+        for k, v in (headers or {}).items():
+            req.add_header(k, v)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            payload = _json.loads(resp.read())
+        rows = _normalize_http(payload)
+        return pd.DataFrame(rows)
+
+    def query_datasource(self, datasource_id, query, limit=None):
+        """Run a read-only query against a real SQL datasource (SQLite supported)."""
+        from ..models import Datasource
+        ds = Datasource.query.get(datasource_id)
+        if not ds:
+            raise nodes.NodeError(f"Datasource introuvable: {datasource_id}")
+        if DANGEROUS_SQL.search(query or ''):
+            raise nodes.NodeError("Requête SQL non autorisée (mutation détectée)")
+        cfg = ds.config or {}
+        if ds.type == 'sqlite':
+            import sqlite3
+            path = cfg.get('path')
+            if not path or not os.path.exists(path):
+                raise nodes.NodeError(f"Fichier SQLite introuvable: {path}")
+            con = sqlite3.connect(path)
+            try:
+                con.row_factory = sqlite3.Row
+                q = query
+                if limit and 'limit' not in (query or '').lower():
+                    q = f"{query.rstrip(';')} LIMIT {int(limit)}"
+                rows = [dict(r) for r in con.execute(q).fetchall()]
+            finally:
+                con.close()
+            return pd.DataFrame(rows)
+        raise nodes.NodeError(f"Type de datasource non supporté pour l'instant: {ds.type}")
+
     def export_path(self, filename):
         out_dir = os.path.join(self.upload_folder, 'exports')
         os.makedirs(out_dir, exist_ok=True)
         return os.path.join(out_dir, filename)
+
+
+def _normalize_http(data):
+    """Normalise a JSON HTTP response into a list of row dicts."""
+    if isinstance(data, list):
+        return [r for r in data if isinstance(r, dict)]
+    if isinstance(data, dict):
+        for key in ('data', 'results', 'items', 'rows'):
+            if isinstance(data.get(key), list):
+                return [r for r in data[key] if isinstance(r, dict)]
+        return [data]
+    return []
 
 
 def _topological_order(node_ids, edges):

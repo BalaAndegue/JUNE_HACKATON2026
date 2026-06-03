@@ -132,3 +132,49 @@ def test_serialization_handles_nan(df):
     # NaN amounts must serialize to None, never float('nan')
     for r in records:
         assert all(v is None or v == v for v in r.values())  # noqa: PLR0124
+
+
+# ─────────────────────────────── real sources ────────────────────────────────
+
+def test_normalize_http_shapes():
+    from app.engine.executor import _normalize_http
+    assert _normalize_http([{'a': 1}, {'a': 2}]) == [{'a': 1}, {'a': 2}]
+    assert _normalize_http({'data': [{'x': 1}]}) == [{'x': 1}]
+    assert _normalize_http({'results': [{'y': 2}]}) == [{'y': 2}]
+    assert _normalize_http({'foo': 'bar'}) == [{'foo': 'bar'}]
+    assert _normalize_http('nope') == []
+
+
+def test_sqlite_datasource_source(tmp_path):
+    """exec_sql_query reads from a REAL SQLite datasource."""
+    import sqlite3
+    from app import create_app
+    from app.extensions import db
+    from app.models import Org, Workspace, Datasource
+    from app.engine.executor import ExecutionContext
+    from app.engine import nodes as engine_nodes
+
+    # build a real sqlite file with data
+    dbfile = tmp_path / 'bank.db'
+    con = sqlite3.connect(dbfile)
+    con.execute('CREATE TABLE tx (id INTEGER, montant REAL, type TEXT)')
+    con.executemany('INSERT INTO tx VALUES (?,?,?)',
+                    [(1, 1000, 'credit'), (2, -50, 'debit'), (3, 9000, 'credit')])
+    con.commit(); con.close()
+
+    app = create_app(testing=True)
+    with app.app_context():
+        db.create_all()
+        org = Org(name='o'); db.session.add(org); db.session.flush()
+        ws = Workspace(org_id=org.id, name='w'); db.session.add(ws); db.session.flush()
+        ds = Datasource(workspace_id=ws.id, type='sqlite', name='bank')
+        ds.config = {'path': str(dbfile)}
+        db.session.add(ds); db.session.flush()
+
+        node = _Node('sql_query', {'datasource_id': ds.id,
+                                   'query': "SELECT * FROM tx WHERE type='credit'"})
+        ctx = ExecutionContext(app.config['UPLOAD_FOLDER'])
+        out, extra = engine_nodes.exec_sql_query(node, [], ctx)
+        assert extra['source'] == 'datasource'
+        assert len(out) == 2
+        assert set(out['type']) == {'credit'}

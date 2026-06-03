@@ -62,18 +62,32 @@ def exec_json_reader(node, inputs, ctx):
 
 
 def exec_sql_query(node, inputs, ctx):
-    # No live DB connection in the hackathon scope: a SQL source reads from an
-    # attached file datasource if provided, otherwise yields an empty frame.
+    """SQL source: query a real datasource (SQLite) if attached, else read a file."""
     cfg = node.config
+    ds_id = cfg.get('datasource_id')
+    query = cfg.get('query')
+    if ds_id:
+        df = ctx.query_datasource(ds_id, query or 'SELECT * FROM sqlite_master', cfg.get('limit'))
+        return df, {'rows_read': len(df), 'source': 'datasource'}
     file_id = cfg.get('file_id')
     if file_id:
         df = ctx.load_csv(file_id, cfg)
-        query = cfg.get('query')
         if query:
             df = ctx.run_sql(query, df)
-        return df, {'rows_read': len(df)}
-    ctx.warn(node, "SQL source sans datasource fichier — sortie vide")
+        return df, {'rows_read': len(df), 'source': 'file'}
+    ctx.warn(node, "SQL source sans datasource ni fichier — sortie vide")
     return pd.DataFrame(), {}
+
+
+def exec_http_request(node, inputs, ctx):
+    """HTTP source: fetch JSON from an API and normalise it to rows."""
+    cfg = node.config
+    url = cfg.get('url')
+    if not url:
+        ctx.warn(node, "HTTP source sans URL — sortie vide")
+        return pd.DataFrame(), {}
+    df = ctx.fetch_http(url, cfg.get('method', 'GET'), cfg.get('headers'), cfg.get('body'))
+    return df, {'rows_read': len(df), 'source': url}
 
 
 # ─────────────────────────────── transforms ──────────────────────────────────
@@ -388,7 +402,7 @@ EXECUTORS = {
     'csv_reader': exec_csv_reader,
     'json_reader': exec_json_reader,
     'sql_query': exec_sql_query,
-    'http_request': exec_passthrough,
+    'http_request': exec_http_request,
     'filter': exec_filter,
     'map': exec_map,
     'aggregate': exec_aggregate,
