@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+import time
 import random
 
 from ..utils import validate_required
+from ..engine import _sql
 
 transform_bp = Blueprint('transform', __name__)
 
@@ -80,6 +82,24 @@ def execute_sql():
         'executed_at': datetime.utcnow().isoformat() + 'Z',
     })
 
+    # Si des données sont fournies (data/input), on exécute réellement la requête
+    # via SQLite en mémoire. La table d'entrée s'appelle `input` (ou {input}).
+    input_data = data.get('data') or data.get('input')
+    if isinstance(input_data, list):
+        started = time.time()
+        try:
+            rows = _sql(data['query'], input_data)
+        except Exception as e:
+            return jsonify({'error': f'Erreur SQL : {e}', 'query': data['query']}), 400
+        return jsonify({
+            'rows': rows,
+            'rows_count': len(rows),
+            'columns': list(rows[0].keys()) if rows else [],
+            'duration_ms': int((time.time() - started) * 1000),
+            'query': data['query'],
+        })
+
+    # Sans données fournies (datasource non branchée), on renvoie un exemple.
     mock_result = [
         {'mois': '2026-06', 'type': 'virement', 'total': 458750.00, 'nb_transactions': 127},
         {'mois': '2026-06', 'type': 'retrait', 'total': 89200.00, 'nb_transactions': 43},
@@ -92,6 +112,7 @@ def execute_sql():
         'columns': list(mock_result[0].keys()) if mock_result else [],
         'duration_ms': random.randint(30, 200),
         'query': data['query'],
+        'note': 'Aucune donnée fournie — exemple renvoyé. Passez "data": [...] pour exécuter réellement.',
     })
 
 
@@ -121,11 +142,18 @@ def preview_transform():
     if err:
         return jsonify({'error': err}), 400
 
-    sample = data['sample_data'][:5] if isinstance(data['sample_data'], list) else []
+    sample_data = data['sample_data'] if isinstance(data['sample_data'], list) else []
+    try:
+        result = _sql(data['query'], sample_data)
+    except Exception as e:
+        return jsonify({'error': f'Erreur SQL : {e}', 'query': data['query']}), 400
+
+    limit = data.get('limit', 20)
     return jsonify({
-        'input_rows': len(data['sample_data']) if isinstance(data['sample_data'], list) else 0,
-        'output_rows': len(sample),
-        'preview': sample,
+        'input_rows': len(sample_data),
+        'output_rows': len(result),
+        'preview': result[:limit],
+        'columns': list(result[0].keys()) if result else [],
         'query': data['query'],
     })
 

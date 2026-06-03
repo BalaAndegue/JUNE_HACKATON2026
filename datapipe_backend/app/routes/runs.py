@@ -1,54 +1,107 @@
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
-import time
+import os
+import csv as _csv
+import io
 import json
 
 from ..extensions import db
-from ..models import Run, RunLog, Node, Pipeline
-from ..utils import check_pipeline_access, paginate
+from ..models import Run, RunLog, Node, Edge, Pipeline, File
+from ..engine import execute_pipeline, coerce_value, CycleError
+from ..utils import check_pipeline_access, paginate, run_results_path
 
 runs_bp = Blueprint('runs', __name__)
 
 
-def _simulate_run(pipeline, run):
-    """Simulate pipeline execution node by node."""
-    nodes = pipeline.nodes
-    results = {}
+def _persist_full_results(run, datasets):
+    """Écrit le dataset complet du nœud terminal sur disque pour l'export/download.
 
+    `node_results` ne conserve qu'un aperçu (10 lignes) ; ce fichier garde toutes
+    les lignes du dernier nœud du pipeline (sa sortie finale).
+    """
+    if not datasets:
+        return
+    last_node_id = list(datasets.keys())[-1]
+    rows = datasets[last_node_id]
+    folder, path = run_results_path(run.id)
+    try:
+        os.makedirs(folder, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(rows, f, ensure_ascii=False)
+    except Exception:
+        current_app.logger.warning(f'Impossible de persister les résultats du run {run.id}')
+
+
+def _read_file_rows(db_file):
+    """Charge les lignes complètes d'un fichier uploadé (CSV/JSON)."""
+    if db_file.path and os.path.exists(db_file.path):
+        ext = db_file.path.rsplit('.', 1)[-1].lower()
+        try:
+            with open(db_file.path, 'rb') as fp:
+                content = fp.read()
+            if ext == 'csv':
+                text = content.decode('utf-8', errors='replace')
+                reader = _csv.DictReader(io.StringIO(text))
+                return [{k: coerce_value(v) for k, v in row.items()} for row in reader]
+            if ext == 'json':
+                parsed = json.loads(content)
+                if isinstance(parsed, list):
+                    return [r for r in parsed if isinstance(r, dict)]
+                return []
+        except Exception:
+            pass
+    # Repli sur l'aperçu stocké en base si le fichier n'est pas lisible sur disque
+    return [dict(r) for r in (db_file.preview or [])]
+
+
+def _file_loader(file_id):
+    db_file = File.query.get(file_id)
+    if not db_file:
+        return []
+    return _read_file_rows(db_file)
+
+
+def _execute_run(pipeline, run):
+    """Exécute réellement le pipeline nœud par nœud via le moteur ETL."""
     run.status = 'running'
     db.session.commit()
 
-    for i, node in enumerate(nodes):
-        log = RunLog(
+    nodes = pipeline.nodes
+    edges = Edge.query.filter_by(pipeline_id=pipeline.id).all()
+
+    try:
+        result = execute_pipeline(nodes, edges, file_loader=_file_loader)
+    except CycleError as e:
+        run.status = 'error'
+        run.error_message = str(e)
+        run.finished_at = datetime.utcnow()
+        db.session.add(RunLog(run_id=run.id, level='error', message=str(e)))
+        pipeline.last_run_at = run.started_at
+        pipeline.last_run_status = 'error'
+        db.session.commit()
+        return
+
+    for lg in result['logs']:
+        db.session.add(RunLog(
             run_id=run.id,
-            node_id=node.id,
-            level='info',
-            message=f'Executing node: {node.label or node.type_slug}',
-        )
-        db.session.add(log)
+            node_id=lg.get('node_id'),
+            level=lg.get('level', 'info'),
+            message=lg.get('message', ''),
+        ))
 
-        mock_rows = 100 + (i * 37)
-        results[node.id] = {
-            'status': 'success',
-            'rows_processed': mock_rows,
-            'rows_output': mock_rows,
-            'duration_ms': 120 + (i * 45),
-            'output_preview': [
-                {'id': j + 1, 'montant': round(1000 + j * 157.3, 2), 'date': '2026-06-01'}
-                for j in range(min(3, mock_rows))
-            ],
-        }
-
-    run.status = 'success'
+    run.node_results = result['node_results']
+    run.status = result['status']
     run.finished_at = datetime.utcnow()
-    run.node_results = results
-
-    success_log = RunLog(run_id=run.id, level='info', message='Pipeline completed successfully')
-    db.session.add(success_log)
+    _persist_full_results(run, result.get('datasets'))
+    if result['status'] == 'error':
+        run.error_message = result['error']
+    else:
+        db.session.add(RunLog(run_id=run.id, level='info',
+                              message='Pipeline terminé avec succès'))
 
     pipeline.last_run_at = run.started_at
-    pipeline.last_run_status = 'success'
+    pipeline.last_run_status = result['status']
     db.session.commit()
 
 
@@ -72,7 +125,7 @@ def trigger_run(pipeline_id):
     db.session.add(run)
     db.session.flush()
 
-    _simulate_run(pipeline, run)
+    _execute_run(pipeline, run)
     return jsonify(run.to_dict(include_results=True)), 201
 
 
@@ -114,6 +167,12 @@ def delete_run(pipeline_id, run_id):
     run = Run.query.filter_by(id=run_id, pipeline_id=pipeline_id).first()
     if not run:
         return jsonify({'error': 'Run not found'}), 404
+    _, path = run_results_path(run.id)
+    if os.path.exists(path):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
     db.session.delete(run)
     db.session.commit()
     return jsonify({'message': 'Run deleted'})
@@ -151,7 +210,7 @@ def retry_run(pipeline_id, run_id):
     new_run = Run(pipeline_id=pipeline_id, trigger='retry', status='pending')
     db.session.add(new_run)
     db.session.flush()
-    _simulate_run(pipeline, new_run)
+    _execute_run(pipeline, new_run)
     return jsonify(new_run.to_dict(include_results=True)), 201
 
 

@@ -1,7 +1,14 @@
-from flask import request
+from flask import request, current_app
 from flask_jwt_extended import get_jwt_identity
 from .models import OrgMember, Pipeline, Workspace, User
+import os
 import re
+
+
+def run_results_path(run_id):
+    """Chemin disque du dataset complet d'un run (sortie du nœud terminal)."""
+    folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'results')
+    return folder, os.path.join(folder, f'{run_id}.json')
 
 
 def validate_required(data, fields):

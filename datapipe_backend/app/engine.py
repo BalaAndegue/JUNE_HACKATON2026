@@ -383,7 +383,8 @@ def execute_pipeline(nodes, edges, file_loader=None, preview_rows=10):
     Returns:
         {
           'status': 'success' | 'error',
-          'node_results': {node_id: {...}},
+          'node_results': {node_id: {...}},   # métadonnées + aperçu par nœud
+          'datasets': {node_id: [rows...]},    # données complètes par nœud
           'logs': [{level, message, node_id}],
           'error': str | None,
         }
@@ -432,7 +433,7 @@ def execute_pipeline(nodes, edges, file_loader=None, preview_rows=10):
             logs.append({'level': 'error', 'node_id': node.id,
                          'message': f'{node.label or node.type_slug} : {ex}'})
             return {'status': 'error', 'node_results': dict(node_results),
-                    'logs': logs, 'error': str(ex)}
+                    'datasets': dict(outputs), 'logs': logs, 'error': str(ex)}
 
     return {'status': 'success', 'node_results': dict(node_results),
-            'logs': logs, 'error': None}
+            'datasets': dict(outputs), 'logs': logs, 'error': None}

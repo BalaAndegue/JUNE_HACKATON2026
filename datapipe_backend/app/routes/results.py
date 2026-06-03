@@ -1,13 +1,14 @@
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+import os
 import io
 import csv
 import json
 
 from ..extensions import db
 from ..models import Run, Pipeline
-from ..utils import check_pipeline_access, paginate
+from ..utils import check_pipeline_access, paginate, run_results_path
 
 results_bp = Blueprint('results', __name__)
 
@@ -15,13 +16,20 @@ EXPORTS_STORE = {}
 
 
 def _get_run_data(run):
+    """Renvoie le dataset complet du run (priorité au fichier persisté sur disque)."""
+    _, path = run_results_path(run.id)
+    if os.path.exists(path):
+        try:
+            with open(path, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    # Repli : aperçu (10 lignes) stocké dans node_results
     results = run.node_results
     if not results:
         return []
-    last_node = list(results.values())[-1] if results else {}
-    return last_node.get('output_preview', [
-        {'id': i + 1, 'montant': round(1000 + i * 157.3, 2), 'date': '2026-06-01'} for i in range(5)
-    ])
+    last_node = list(results.values())[-1]
+    return last_node.get('output_preview', [])
 
 
 @results_bp.route('/pipelines/<pipeline_id>/results', methods=['GET'])
