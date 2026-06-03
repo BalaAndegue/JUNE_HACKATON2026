@@ -26,3 +26,5 @@ class Config:
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
     TELEGRAM_WEBHOOK_SECRET = os.getenv('TELEGRAM_WEBHOOK_SECRET', '')
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+    # URL publique HTTPS du backend (prod) -> le webhook Telegram s'enregistre tout seul
+    PUBLIC_URL = os.getenv('PUBLIC_URL', '')

@@ -61,4 +61,9 @@ def create_app(testing=False):
         from .scheduler import start_scheduler
         start_scheduler(app)
 
+    if not testing and app.config.get('PUBLIC_URL'):
+        with app.app_context():
+            from .routes.telegram import register_webhook
+            register_webhook(app)
+
     return app

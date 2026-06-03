@@ -105,6 +105,48 @@ def _latest_run(pipeline):
             .order_by(Run.started_at.desc()).first())
 
 
+def register_webhook(app):
+    """Enregistre le webhook Telegram au démarrage si PUBLIC_URL est défini (prod -> zéro polling)."""
+    token = app.config.get('TELEGRAM_BOT_TOKEN', '')
+    public = (app.config.get('PUBLIC_URL', '') or '').rstrip('/')
+    if not token or not public:
+        return
+    url = f'{public}/api/v1/telegram/webhook'
+    payload = {'url': url}
+    if app.config.get('TELEGRAM_WEBHOOK_SECRET'):
+        payload['secret_token'] = app.config['TELEGRAM_WEBHOOK_SECRET']
+    try:
+        req = urllib.request.Request(
+            f'https://api.telegram.org/bot{token}/setWebhook',
+            data=json.dumps(payload).encode(),
+            headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            json.loads(r.read())
+        # enregistre aussi le menu de commandes
+        _tg('setMyCommands', {'commands': BOT_COMMANDS})
+        app.logger.info(f"Webhook Telegram enregistré : {url}")
+    except Exception as e:  # noqa: BLE001
+        app.logger.error(f"setWebhook a échoué : {e}")
+
+
+BOT_COMMANDS = [
+    {'command': 'login', 'description': 'Se connecter : /login <email> <mdp>'},
+    {'command': 'logout', 'description': 'Se déconnecter'},
+    {'command': 'whoami', 'description': 'Compte + pipeline courant'},
+    {'command': 'pipeline', 'description': 'Résumé du pipeline'},
+    {'command': 'new', 'description': 'Créer un pipeline : /new <nom>'},
+    {'command': 'run', 'description': 'Exécuter le pipeline'},
+    {'command': 'preview', 'description': 'Aperçu des données (CSV)'},
+    {'command': 'audit', 'description': 'Rapport audit (JSON)'},
+    {'command': 'anomalies', 'description': 'Transactions suspectes'},
+    {'command': 'chart', 'description': 'Graphique du résultat'},
+    {'command': 'alert', 'description': 'Alerte anomalies : /alert <n>'},
+    {'command': 'schedule', 'description': 'Récurrent : /schedule <min>'},
+    {'command': 'unschedule', 'description': 'Annuler la planification'},
+    {'command': 'help', 'description': 'Aide'},
+]
+
+
 def _send(chat_id, text, confirm=False):
     payload = {'chat_id': chat_id, 'text': text}
     if confirm:

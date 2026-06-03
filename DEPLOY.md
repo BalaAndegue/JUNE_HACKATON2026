@@ -104,10 +104,13 @@ et ajoute les secrets repo : `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`.
 - [ ] Restreindre le CORS au domaine (actuellement `*`) — `app/__init__.py`
 - [ ] (Optionnel) PostgreSQL : `DATABASE_URL=postgresql://...` dans `.env` + `pip install psycopg2-binary`
 
-## 🤖 Bot Telegram en production (webhook)
-Une fois le backend public en HTTPS (`https://TON-DOMAINE`), enregistre le webhook **une fois** :
-```bash
-curl "https://api.telegram.org/bot<TON_TOKEN>/setWebhook?url=https://TON-DOMAINE/api/v1/telegram/webhook"
+## 🤖 Bot Telegram en production (webhook AUTOMATIQUE)
+**Pas de curl, pas de poller.** Mets simplement dans `datapipe_backend/.env` :
 ```
-Mets `TELEGRAM_BOT_TOKEN` (+ `FRONTEND_URL=https://TON-DOMAINE:3000` et un `TELEGRAM_WEBHOOK_SECRET`) dans `.env`.
-En prod le **webhook remplace le poller** (pas besoin de lancer `telegram_bot.py`).
+TELEGRAM_BOT_TOKEN=...
+PUBLIC_URL=https://TON-DOMAINE        # URL HTTPS publique du backend
+TELEGRAM_WEBHOOK_SECRET=un-secret     # optionnel mais recommandé
+FRONTEND_URL=https://TON-DOMAINE      # pour les liens éditeur dans le bot
+```
+Au démarrage, le backend **enregistre le webhook tout seul** (`setWebhook` + menu de commandes).
+Le **webhook remplace le poller** → ne lance PAS `telegram_bot.py` en prod.
