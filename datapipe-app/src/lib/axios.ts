@@ -1,6 +1,21 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+/**
+ * API base URL.
+ * When served over a LAN IP (e.g. 192.168.x.x:3000), the backend lives on the
+ * same host at :5000 — derive it from the current hostname so the app works
+ * both on localhost and across the network without rebuilding.
+ */
+function resolveBaseUrl(): string {
+  const env = process.env.NEXT_PUBLIC_API_URL
+  if (env && !env.includes('localhost')) return env
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:5000`
+  }
+  return env ?? 'http://localhost:5000'
+}
+
+const BASE_URL = resolveBaseUrl()
 
 export const api = axios.create({
   baseURL: BASE_URL,
