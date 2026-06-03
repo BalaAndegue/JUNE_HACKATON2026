@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fileService } from '@/services/file.service'
+import api from '@/lib/axios'
 import { formatBytes, getRelativeTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { DataFile } from '@/types'
@@ -17,23 +18,39 @@ export default function FilesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [wsId, setWsId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { loadFiles() }, [])
+  // Resolve the user's real workspace (orgs -> workspaces).
+  useEffect(() => {
+    (async () => {
+      try {
+        const orgs = (await api.get('/api/v1/orgs')).data.orgs
+        if (!orgs?.length) { setIsLoading(false); return }
+        const ws = (await api.get(`/api/v1/orgs/${orgs[0].id}/workspaces`)).data.workspaces
+        if (ws?.length) setWsId(ws[0].id)
+        else setIsLoading(false)
+      } catch { setIsLoading(false) }
+    })()
+  }, [])
+
+  useEffect(() => { if (wsId) loadFiles() }, [wsId])
 
   const loadFiles = async () => {
+    if (!wsId) return
     setIsLoading(true)
     try {
-      const data = await fileService.list()
+      const data = await fileService.list(wsId)
       setFiles(data)
     } catch { toast.error('Erreur de chargement') }
     finally { setIsLoading(false) }
   }
 
   const handleUpload = async (f: File) => {
+    if (!wsId) { toast.error('Workspace introuvable'); return }
     setUploadProgress(0)
     try {
-      const result = await fileService.upload(f, {}, (pct) => setUploadProgress(pct))
+      const result = await fileService.upload(f, wsId, {}, (pct) => setUploadProgress(pct))
       setFiles((prev) => [result, ...prev])
       toast.success(`"${f.name}" uploadé — ${result.rows} lignes, ${result.columns} colonnes`)
     } catch {

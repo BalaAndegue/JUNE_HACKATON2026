@@ -549,7 +549,10 @@ def agent_plan():
         "aggregate, join, sort, dedup, sql_transform, validate, mask_pii, detect_anomalies, "
         "quality_report, file_export.\n"
         f"Colonnes connues : {', '.join(columns) if columns else 'inconnues'}.\n"
-        "Tu ne fais qu'UNE action à la fois. Tu n'exécutes jamais : tu proposes."
+        "RÈGLE IMPORTANTE : dès que l'utilisateur exprime une intention de créer, ajouter, "
+        "configurer, connecter, supprimer, transformer ou exécuter, tu DOIS répondre par une "
+        "action (ou un plan), JAMAIS par un simple texte. N'utilise 'reply' que pour une "
+        "vraie question/discussion. Tu n'exécutes jamais : tu proposes, l'utilisateur confirme."
     )
     raw = _call_llm(system=system, messages=[{'role': 'user', 'content': message}])
 

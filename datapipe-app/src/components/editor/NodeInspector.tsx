@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { useEditorStore } from '@/store/editor.store'
 import { nodeService } from '@/services/node.service'
 import { fileService } from '@/services/file.service'
+import api from '@/lib/axios'
 import { aiService } from '@/services/ai.service'
 import { toast } from 'sonner'
 import { NODE_REGISTRY_MAP } from '@/lib/nodeRegistry'
@@ -43,10 +44,17 @@ export function NodeInspector({ pipelineId }: NodeInspectorProps) {
   const typeSlug = selectedNode ? ((selectedNode.data as Record<string, unknown>).type_slug as string ?? selectedNode.type) : null
   const typeDef = typeSlug ? NODE_REGISTRY_MAP[typeSlug] : null
 
-  // Load files for source nodes
+  // Load files for source nodes (résout le workspace réel de l'utilisateur)
   useEffect(() => {
-    if (!typeSlug || !['csv_import', 'json_loader'].includes(typeSlug)) return
-    fileService.list().then(setFiles).catch(() => {})
+    if (!typeSlug || !['csv_import', 'json_loader', 'csv_reader', 'json_reader'].includes(typeSlug)) return
+    ;(async () => {
+      try {
+        const orgs = (await api.get('/api/v1/orgs')).data.orgs
+        if (!orgs?.length) return
+        const ws = (await api.get(`/api/v1/orgs/${orgs[0].id}/workspaces`)).data.workspaces
+        if (ws?.length) setFiles(await fileService.list(ws[0].id))
+      } catch { /* ignore */ }
+    })()
   }, [typeSlug])
 
   useEffect(() => {
